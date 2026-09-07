@@ -1,0 +1,520 @@
+{
+  "schema_version": "1.1.0",
+  "name": "chapman-7class-canonical",
+  "description": "Canonical single-label mapping from SNOMED CT concept ids (WFDB '#Dx:' field) to the seven arrhythmia classes used in the Noise-Aware Explainable LoRA-ViT study. Chapman-Shaoxing records are multi-label; a record is resolved to exactly one class by walking 'resolution_order' and taking the first class whose code set intersects the record's codes.",
+  "classes": [
+    "NSR",
+    "AFIB",
+    "SB",
+    "ST",
+    "SVT",
+    "CD",
+    "OTHER"
+  ],
+  "class_index": {
+    "NSR": 0,
+    "AFIB": 1,
+    "SB": 2,
+    "ST": 3,
+    "SVT": 4,
+    "CD": 5,
+    "OTHER": 6
+  },
+  "resolution_orders": {
+    "conduction_first": [
+      "CD",
+      "AFIB",
+      "SVT",
+      "ST",
+      "SB",
+      "NSR"
+    ],
+    "rhythm_first": [
+      "AFIB",
+      "SVT",
+      "ST",
+      "SB",
+      "CD",
+      "NSR"
+    ],
+    "paper_reported": [
+      "AFIB",
+      "SVT",
+      "ST",
+      "SB",
+      "NSR",
+      "CD"
+    ],
+    "clinical_specificity": [
+      "CD",
+      "OTHER",
+      "AFIB",
+      "SVT",
+      "ST",
+      "SB",
+      "NSR"
+    ],
+    "canonical_hmgmedformer": [
+      "CD",
+      "OTHER",
+      "AFIB",
+      "SVT",
+      "ST",
+      "SB",
+      "NSR"
+    ],
+    "canonical_v2": [
+      "CD",
+      "VE",
+      "AFIB",
+      "SVT",
+      "ST",
+      "SB",
+      "NSR"
+    ]
+  },
+  "default_resolution_order": "clinical_specificity",
+  "resolution_order_notes": {
+    "conduction_first": "Conduction disturbance is claimed BEFORE any rhythm class. Rationale: in Chapman-Shaoxing a bundle-branch block or AV block nearly always co-occurs with a rhythm code, so any ordering that lets rhythm win leaves CD nearly empty (measured: 59 records total, 41 in train). Conduction status is a property of the QRS and is independent of the underlying rhythm, so it is the more specific finding and the one the class is named for. Cost: a record with sinus bradycardia AND right bundle branch block is labelled CD, not SB, so SB loses its conduction-affected members. State this explicitly in any write-up -- it is a labelling decision, not a fact about the data.",
+    "rhythm_first": "Pathological rhythms first, then conduction disturbance, then sinus rhythm. MEASURED ON THE REAL CORPUS: this leaves CD with only 59 records (41 train / 9 val / 9 test), because conduction findings in Chapman almost always accompany a rhythm code that claims the record first. A 9-record test class cannot support a reportable per-class metric. Do not use for a 7-class headline result; see docs/CLASS_MAPPING.md.",
+    "paper_reported": "Places NSR ahead of CD, which starves CD even further. This reproduces the degenerate CD count reported in the manuscript's Chapman class distribution (CD: 1). Provided for reproducibility only; see docs/CLASS_MAPPING.md for why it must not be used for a headline result.",
+    "clinical_specificity": "The only ordering under which all seven classes are populated. MEASURED: the five rhythm classes' 'carries' counts sum to exactly 10247, the corpus size -- every Chapman record carries exactly one rhythm code. So OTHER can never arise as a residue, and under every rhythm-inclusive ordering it is empty. This ordering claims the two cross-cutting, beat-level findings first: conduction disturbance, then the ectopy and premature-beat group the manuscript itself names as OTHER ('mixed or heterogeneous morphology... includes ventricular ectopics and PACs'). Both are properties of individual complexes rather than of the rhythm, so both coexist with a rhythm label and neither can be recovered by precedence among rhythms. Cost, which any write-up must state: a record with sinus bradycardia and frequent PVCs is labelled OTHER, not SB.",
+    "canonical_hmgmedformer": "Reproduces the to_canonical() grouping published in the HMGMedFormer work, translated from acronyms to SNOMED via chapman_acronym_aliases. Differences from clinical_specificity, all taken from to_canonical(): SAAWR joins AFIB rather than SVT; ST additionally absorbs ST elevation and ST depression, not sinus tachycardia alone; clockwise/counterclockwise rotation join CD; sinus arrhythmia falls to OTHER rather than NSR. to_canonical() also defines a separate PVC class for ventricular ectopy, but the published label_names list is ['AFIB','CD','NSR','OTHER','SB','ST','SVT'] with no PVC, so ectopy is folded into OTHER here to match the seven classes actually reported.",
+    "canonical_v2": "Corrected single-label taxonomy. Findings (CD, VE) are claimed before rhythms because every record carries exactly one rhythm code; a rhythm-first order empties both. Unmatched records are excluded and reported (fallback_class_canonical_v2 is null)."
+  },
+  "evaluability": {
+    "note": "A class needs enough UNIQUE records in the test split to support a per-class metric, independent of how the training split is balanced. Augmentation cannot create test-set precision. Below ~50 unique test records a per-class recall has a 95% CI wider than +/-15 percentage points and should be reported as an interval or not at all.",
+    "min_unique_test_records_for_reporting": 50,
+    "audit_command": "python -m ecgvit.cli label-audit"
+  },
+  "class_definitions": {
+    "NSR": {
+      "long_name": "Normal sinus rhythm",
+      "snomed": [
+        "426783006",
+        "427393009"
+      ],
+      "rationale": "Sinus rhythm and sinus arrhythmia. AHA/ACC: regular P-QRS-T morphology, PR 120-200 ms, QRS < 120 ms, rate 60-100 bpm."
+    },
+    "AFIB": {
+      "long_name": "Atrial fibrillation / flutter",
+      "snomed": [
+        "164889003",
+        "164890007",
+        "195080001",
+        "426749004",
+        "282825002",
+        "314208002"
+      ],
+      "rationale": "ESC 2020 AF guideline: absent or disorganised P waves with irregularly irregular RR intervals. Flutter is grouped with AF following the Chapman-Shaoxing convention of Zheng et al. (2020)."
+    },
+    "SB": {
+      "long_name": "Sinus bradycardia",
+      "snomed": [
+        "426177001",
+        "426627000"
+      ],
+      "rationale": "ACC/AHA/HRS 2018 bradycardia guideline: regular P waves with normal axis, rate < 60 bpm, prolonged RR intervals."
+    },
+    "ST": {
+      "long_name": "Sinus tachycardia",
+      "snomed": [
+        "427084000"
+      ],
+      "rationale": "Sinus rate > 100 bpm with preserved P-QRS-T morphology. Kept separate from SVT so that the ST-vs-SVT confusion reported in the manuscript remains measurable."
+    },
+    "SVT": {
+      "long_name": "Supraventricular tachycardia (non-sinus)",
+      "snomed": [
+        "426761007",
+        "713422000",
+        "251166008",
+        "233897008",
+        "17366009",
+        "67198005",
+        "426648003"
+      ],
+      "rationale": "ACC/AHA/HRS 2015 SVT guideline: narrow-QRS tachycardia > 100 bpm with retrograde or absent P waves and regular RR intervals. Includes atrial tachycardia, AVNRT, AVRT, junctional tachycardia and sinus-to-atrial wandering rhythm."
+    },
+    "CD": {
+      "long_name": "Conduction disturbance",
+      "snomed": [
+        "59118001",
+        "713427006",
+        "164909002",
+        "733534002",
+        "713426002",
+        "251120003",
+        "6374002",
+        "445118002",
+        "445211001",
+        "698252002",
+        "82226007",
+        "270492004",
+        "195042002",
+        "426183003",
+        "54016002",
+        "27885002",
+        "233917008",
+        "204384007",
+        "65778007",
+        "50799005",
+        "74390002",
+        "195060002",
+        "10370003",
+        "251266004",
+        "251268003"
+      ],
+      "rationale": "AHA/ACCF/HRS Part IV: widened QRS > 120 ms, RSR' in V1-V3 (RBBB), broad slurred R in I and aVL (LBBB), fascicular blocks, AV blocks, pre-excitation and paced rhythms."
+    },
+    "OTHER": {
+      "long_name": "Other / heterogeneous morphology",
+      "snomed": [
+        "17338001",
+        "427172004",
+        "284470004",
+        "63593006",
+        "164884008",
+        "11157007",
+        "251180001",
+        "251182009",
+        "251164006",
+        "251173003",
+        "195101003",
+        "426995002",
+        "75532003",
+        "251187003",
+        "13640000",
+        "251168009",
+        "251170000",
+        "61277005",
+        "49260003",
+        "81898007",
+        "164895002",
+        "164896001",
+        "111288001",
+        "425856008",
+        "29320008",
+        "426664006",
+        "106068003",
+        "233892002"
+      ],
+      "rationale": "Ectopy, premature and escape beats, and ventricular rhythms -- the group the manuscript describes as 'mixed or heterogeneous morphology not meeting criteria for the primary classes; includes ventricular ectopics and PACs'. These are beat-level findings that coexist with a rhythm label, so OTHER only receives records when it is given precedence over the rhythm classes (the clinical_specificity ordering). It REMAINS the fallback for any record whose codes match no class.",
+      "dual_role": "OTHER is both a positively-matched class (in orderings that list it) and the fallback for unmatched records. In the legacy orderings it is not listed, so it stays a pure residue and is empty on this corpus."
+    }
+  },
+  "fallback_class": "OTHER",
+  "provenance": {
+    "snomed_code_source": "PhysioNet/CinC Challenge 2021 official diagnosis tables (dx_mapping_scored.csv, dx_mapping_unscored.csv), physionetchallenges/evaluation-2021",
+    "class_grouping_source": "Noise-Aware and Explainable LoRA-Enhanced Vision Transformer framework for 12-Lead ECG Classification, Tables 1, 3, 9 and 10",
+    "verified_against": "C:/H Research Projects/WFDB_ChapmanShaoxing headers (10,247 records, 500 Hz, 5000 samples, 12 leads)"
+  },
+  "chapman_acronym_aliases": {
+    "note": "The HMGMedFormer to_canonical() function groups by ACRONYM, using the original Chapman ConditionNames_SNOMED-CT.csv whose abbreviation strings differ from the PhysioNet/CinC 2021 tables shipped in snomed_conditions.csv (their 'ST' is our 'STach', their 'AF'/'AFIB' our 'AF', their '1AVB' our 'IAVB'). These aliases translate the published grouping onto this vocabulary.",
+    "confident": {
+      "SR": "426783006",
+      "AFIB": "164889003",
+      "ST": "427084000",
+      "AT": "713422000",
+      "STDD": "429622005",
+      "1AVB": "270492004",
+      "2AVB": "195042002",
+      "2AVB1": "54016002",
+      "3AVB": "27885002",
+      "IVB": "698252002",
+      "VB": "11157007",
+      "VPE": "195060002",
+      "VFW": "111288001"
+    },
+    "ambiguous_not_assigned": {
+      "STTC": {
+        "candidates": [
+          "428750005",
+          "55930002"
+        ],
+        "reason": "maps to more than one SNOMED concept in this vocabulary; left unassigned rather than guessed. Drop the original ConditionNames_SNOMED-CT.csv into environment/data/ for exact acronym fidelity."
+      },
+      "STTU": {
+        "candidates": [
+          "55930002"
+        ],
+        "reason": "maps to more than one SNOMED concept in this vocabulary; left unassigned rather than guessed. Drop the original ConditionNames_SNOMED-CT.csv into environment/data/ for exact acronym fidelity."
+      },
+      "TWC": {
+        "candidates": [
+          "164934002",
+          "59931005"
+        ],
+        "reason": "maps to more than one SNOMED concept in this vocabulary; left unassigned rather than guessed. Drop the original ConditionNames_SNOMED-CT.csv into environment/data/ for exact acronym fidelity."
+      },
+      "JPT": {
+        "candidates": [
+          "426648003",
+          "251164006"
+        ],
+        "reason": "maps to more than one SNOMED concept in this vocabulary; left unassigned rather than guessed. Drop the original ConditionNames_SNOMED-CT.csv into environment/data/ for exact acronym fidelity."
+      },
+      "VET": {
+        "candidates": [
+          "251180001",
+          "81898007"
+        ],
+        "reason": "maps to more than one SNOMED concept in this vocabulary; left unassigned rather than guessed. Drop the original ConditionNames_SNOMED-CT.csv into environment/data/ for exact acronym fidelity."
+      },
+      "LFBBB": {
+        "candidates": [
+          "164909002",
+          "445118002"
+        ],
+        "reason": "maps to more than one SNOMED concept in this vocabulary; left unassigned rather than guessed. Drop the original ConditionNames_SNOMED-CT.csv into environment/data/ for exact acronym fidelity."
+      }
+    }
+  },
+  "class_definitions_canonical_hmgmedformer": {
+    "SB": [
+      "426177001",
+      "426627000"
+    ],
+    "NSR": [
+      "426783006"
+    ],
+    "AFIB": [
+      "164889003",
+      "164890007",
+      "195080001",
+      "426749004",
+      "282825002",
+      "314208002",
+      "17366009"
+    ],
+    "ST": [
+      "427084000",
+      "164931005",
+      "429622005"
+    ],
+    "SVT": [
+      "426761007",
+      "713422000",
+      "233897008",
+      "251166008",
+      "67198005"
+    ],
+    "CD": [
+      "59118001",
+      "713427006",
+      "164909002",
+      "733534002",
+      "713426002",
+      "251120003",
+      "6374002",
+      "445118002",
+      "445211001",
+      "698252002",
+      "82226007",
+      "270492004",
+      "195042002",
+      "426183003",
+      "54016002",
+      "27885002",
+      "233917008",
+      "204384007",
+      "65778007",
+      "50799005",
+      "74390002",
+      "195060002",
+      "10370003",
+      "251266004",
+      "251268003",
+      "251199005",
+      "251198002"
+    ],
+    "OTHER": [
+      "17338001",
+      "427172004",
+      "284470004",
+      "63593006",
+      "164884008",
+      "11157007",
+      "251180001",
+      "251182009",
+      "251164006",
+      "251173003",
+      "195101003",
+      "426995002",
+      "75532003",
+      "251187003",
+      "13640000",
+      "251168009",
+      "251170000",
+      "61277005",
+      "49260003",
+      "81898007",
+      "164895002",
+      "164896001",
+      "111288001",
+      "425856008",
+      "29320008",
+      "426664006",
+      "106068003",
+      "233892002",
+      "427393009"
+    ]
+  },
+  "acronym_buckets_canonical_hmgmedformer": {
+    "SB": [
+      "SB"
+    ],
+    "NSR": [
+      "SR",
+      "NSR"
+    ],
+    "AFIB": [
+      "AFIB",
+      "AF",
+      "AFL",
+      "SAAWR"
+    ],
+    "ST": [
+      "ST",
+      "STTC",
+      "STDD",
+      "STTU",
+      "STE",
+      "TWC"
+    ],
+    "SVT": [
+      "SVT",
+      "AT",
+      "AVRT",
+      "JPT"
+    ],
+    "CD": [
+      "RBBB",
+      "LFBBB",
+      "IVB",
+      "CCR",
+      "CR",
+      "1AVB",
+      "2AVB",
+      "2AVB1",
+      "3AVB",
+      "AVB"
+    ],
+    "OTHER": [
+      "VPB",
+      "VEB",
+      "VB",
+      "VET",
+      "VFW",
+      "VPE"
+    ]
+  },
+  "acronym_buckets_note": "Transcribed verbatim from to_canonical() in the HMGMedFormer notebook. The dataset developers ship ConditionNames_SNOMED-CT.csv with Chapman-Shaoxing and it is the authoritative acronym->SNOMED mapping, so when that file is present in environment/data/ these buckets are resolved against it at load time and no hand translation is involved. Without it the loader falls back to class_definitions_canonical_hmgmedformer, which is a best-effort translation onto the PhysioNet/CinC 2021 abbreviations and is marked as such. to_canonical()'s seventh bucket returns 'PVC'; the published label_names has no PVC class, so those acronyms are folded into OTHER here to match the seven classes reported.",
+  "classes_canonical_v2": [
+    "NSR",
+    "AFIB",
+    "SB",
+    "ST",
+    "SVT",
+    "CD",
+    "VE"
+  ],
+  "class_index_canonical_v2": {
+    "NSR": 0,
+    "AFIB": 1,
+    "SB": 2,
+    "ST": 3,
+    "SVT": 4,
+    "CD": 5,
+    "VE": 6
+  },
+  "fallback_class_canonical_v2": null,
+  "acronym_buckets_canonical_v2": {
+    "NSR": [
+      "SR",
+      "SA"
+    ],
+    "AFIB": [
+      "AFIB",
+      "AF"
+    ],
+    "SB": [
+      "SB"
+    ],
+    "ST": [
+      "ST"
+    ],
+    "SVT": [
+      "SVT",
+      "AT",
+      "AVNRT",
+      "AVRT"
+    ],
+    "CD": [
+      "RBBB",
+      "LBBB",
+      "LBBBB",
+      "LFBBB",
+      "IVB",
+      "IDC",
+      "1AVB",
+      "2AVB",
+      "2AVB1",
+      "2AVB2",
+      "3AVB",
+      "AVB",
+      "WPW",
+      "VPE"
+    ],
+    "VE": [
+      "VPB",
+      "VEB",
+      "VB",
+      "VET",
+      "VFW"
+    ]
+  },
+  "acronym_buckets_canonical_v2_note": "canonical_v2 is canonical_hmgmedformer with five corrections, each traceable to the dataset developers' own ConditionNames_SNOMED-CT.csv:\n(1) ST now contains ONLY 427084000 (Sinus Tachycardia). canonical_hmgmedformer's ST bucket also held TWC (T wave Change, 1876 records), STTC (ST-T Change, 1158), STDD (ST drop down, 402), STTU (ST tilt up, 176) and STE (ST extension, 2) -- five repolarisation MORPHOLOGY findings merged with one RHYTHM on the shared 'ST' prefix. Because ST outranks SB and NSR in the precedence chain, that merge pulled ~1,094 sinus-bradycardia and ~348 sinus-rhythm records into a class named tachycardia. Repolarisation findings are cross-cutting and are not representable in a single-label rhythm taxonomy; they return as a binary head in the multi-label formulation.\n(2) OTHER is renamed VE. Its codes were never a residue -- they are exactly the ventricular ectopy family (VPB, VEB, VB, VET, VFW), and the fallback never fired because every Chapman record carries a rhythm code. 'OTHER' invited readers to discount a clinically defined class.\n(3) CR (colockwise rotation, 76) and CCR (countercolockwise rotation, 162) are removed from CD: precordial transition-zone rotation is an axis descriptor, not a conduction disturbance. 2AVB2 (28189009), LBBB/LBBBB spellings, IDC and WPW are added -- all are genuine conduction abnormalities that the earlier bucket missed.\n(4) VPE (ventricular preexcitation, 195060002) moves from the ectopy bucket to CD. Pre-excitation is an accessory-pathway conduction abnormality, not an ectopic beat.\n(5) SAAWR/WAVN (195101003) leaves AFIB -- a wandering atrial pacemaker is neither fibrillation nor flutter -- and JPT (junctional premature beat, 251164006) leaves SVT, because a premature beat is not a tachycardia. AVNRT (233896004) is added to SVT, which the earlier bucket omitted. SA (Sinus Irregularity, 427393009) joins NSR, following the published Chapman four-class definition where the SR class is {SR, SA}.\nNet effect on the corpus: the ~9 SAAWR records now match no bucket and are EXCLUDED and counted in index_report.n_unassigned rather than mislabelled.",
+  "class_definitions_canonical_v2": {
+    "NSR": [
+      "426783006",
+      "427393009"
+    ],
+    "AFIB": [
+      "164889003",
+      "164890007"
+    ],
+    "SB": [
+      "426177001"
+    ],
+    "ST": [
+      "427084000"
+    ],
+    "SVT": [
+      "233896004",
+      "233897008",
+      "426761007",
+      "713422000"
+    ],
+    "CD": [
+      "27885002",
+      "28189009",
+      "54016002",
+      "59118001",
+      "74390002",
+      "164909002",
+      "195042002",
+      "195060002",
+      "233917008",
+      "270492004",
+      "698252002"
+    ],
+    "VE": [
+      "11157007",
+      "13640000",
+      "17338001",
+      "75532003",
+      "251180001"
+    ]
+  }
+}

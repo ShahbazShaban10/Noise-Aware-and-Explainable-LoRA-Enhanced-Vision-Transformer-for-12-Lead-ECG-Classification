@@ -1,0 +1,78 @@
+schema_version: "1.0.0"
+
+primary:
+  name: chapman-shaoxing
+  title: A large scale 12-lead electrocardiogram database for arrhythmia study
+  version: "1.0.0"
+  landing_page: https://physionet.org/content/ecg-arrhythmia/1.0.0/
+  zip_url: https://physionet.org/static/published-projects/ecg-arrhythmia/a-large-scale-12-lead-electrocardiogram-database-for-arrhythmia-study-1.0.0.zip
+  rsync_url: physionet.org::published-projects/ecg-arrhythmia/1.0.0/
+  wget_mirror: https://physionet.org/files/ecg-arrhythmia/1.0.0/
+  licence: CC-BY-4.0
+  licence_url: https://physionet.org/content/ecg-arrhythmia/view-license/1.0.0/
+  citation: >
+    Zheng, J., Guo, H. & Chu, H. A large scale 12-lead electrocardiogram database for
+    arrhythmia study (version 1.0.0). PhysioNet (2022). RRID:SCR_007345.
+  paper: >
+    Zheng, J. et al. A 12-lead electrocardiogram database for arrhythmia research covering
+    more than 10,000 patients. Scientific Data 7, 48 (2020).
+  cohort_used: Chapman-Shaoxing (JS-prefixed records)
+  expected:
+    # Verified against the corpus this task was authored on.
+    # min_records is the hard gate; exact counts differ between the standalone
+    # Chapman-Shaoxing release and the combined Chapman+Ningbo release.
+    min_records: 10000
+    reference_record_count: 10247
+    n_leads: 12
+    lead_order: [I, II, III, aVR, aVL, aVF, V1, V2, V3, V4, V5, V6]
+    sampling_frequency_hz: 500
+    samples_per_record: 5000
+    duration_s: 10
+    adc_gain_per_mv: 1000
+    adc_resolution_bits: 16
+    label_field: "#Dx:"
+    label_vocabulary: snomed_ct
+
+secondary:
+  # Optional. Only needed to reproduce the manuscript's cross-dataset generalisation
+  # experiment (Table 3). The task's tests do not require it.
+  name: ptb-xl
+  title: PTB-XL, a large publicly available electrocardiography dataset
+  version: "1.0.3"
+  landing_page: https://physionet.org/content/ptb-xl/1.0.3/
+  licence: CC-BY-4.0
+  citation: >
+    Wagner, P. et al. PTB-XL, a large publicly available electrocardiography dataset.
+    Scientific Data 7, 154 (2020).
+  note: >
+    PTB-XL is sampled at 500 Hz (records_500) and 100 Hz (records_100). Use records_500 so
+    that no resampling is required. Labels are SCP-ECG statements, not SNOMED CT; the
+    mapping to the seven classes lives in ecgvit/labels.py::SCP_TO_CLASS and is applied only
+    when --eval-ptbxl is passed.
+
+condition_names_csv:
+  file: ConditionNames_SNOMED-CT.csv
+  description: >
+    Acronym -> SNOMED CT table distributed by the dataset developers with Chapman-Shaoxing
+    (63 conditions). Vendored here because it is 2.5 KB, CC BY 4.0 like the rest of the
+    release, and is the authoritative mapping for the published canonical_hmgmedformer
+    grouping. It contains no patient data.
+  licence: CC-BY-4.0
+  authority: >
+    Where this file and snomed_conditions.csv both describe a code, this file's abbreviation
+    wins; the two are merged so codes it does not cover still resolve. NOTE the collision:
+    here 'AF' is atrial FLUTTER and 'AFIB' is fibrillation, while the PhysioNet/CinC 2021
+    tables use 'AF' for fibrillation and 'AFL' for flutter.
+
+integrity:
+  # PhysioNet publishes SHA256SUMS.txt alongside the files. fetch_dataset.sh downloads it
+  # and verifies every file against it, so no digest is hard-coded here (hard-coding one
+  # would silently break whenever PhysioNet reissues the archive).
+  checksum_manifest_url: https://physionet.org/files/ecg-arrhythmia/1.0.0/SHA256SUMS.txt
+  verify_command: "python -m ecgvit.cli verify-data"
+
+privacy:
+  contains_phi: false
+  note: >
+    Records are de-identified by the data providers. Age and sex remain in the headers and
+    are read only for the cohort report; they are never used as model inputs.

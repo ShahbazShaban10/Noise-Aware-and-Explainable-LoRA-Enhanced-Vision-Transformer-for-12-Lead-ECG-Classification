@@ -1,0 +1,17 @@
+# PyTorch, pinned to the CUDA 12.8 build index.
+#
+# Why cu128 and not the default PyPI wheel: the RTX 50-series (Blackwell) is compute
+# capability sm_120. Wheels built against CUDA <= 12.6 contain no sm_120 kernels, so
+# `torch.cuda.is_available()` returns True and then every kernel launch fails with
+# "no kernel image is available for execution on the device". Install from this index.
+#
+#   pip install -r requirements-cu128.txt --index-url https://download.pytorch.org/whl/cu128
+#
+# Verify afterwards:
+#   python -c "import torch; print(torch.cuda.get_arch_list())"   # must contain sm_120
+#
+# torchvision and torchaudio are NOT required by this project and are deliberately omitted.
+
+--index-url https://download.pytorch.org/whl/cu128
+
+torch==2.8.0
