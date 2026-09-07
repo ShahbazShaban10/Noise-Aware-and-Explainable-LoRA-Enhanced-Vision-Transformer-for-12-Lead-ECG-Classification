@@ -24,6 +24,11 @@ tests/fixtures/corpus/
 **/tests/fixtures/corpus/
 
 # Run artefacts
+# `harbor run` writes a jobs/ tree beside the working directory: per-trial logs plus the
+# collected artefacts, i.e. checkpoints and figures. The transcripts that matter are
+# quoted in VALIDATION.md; the raw trees are run output, not deliverables.
+jobs/
+logs/
 outputs/
 **/outputs/
 *.pt

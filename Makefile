@@ -16,7 +16,7 @@ help:
 	@echo "checks   both of the above, output captured to logs/"
 
 build:
-	docker build -t $(IMAGE) -f $(TASK)/environment/Dockerfile $(TASK)
+	docker build -t $(IMAGE) $(TASK)/environment
 
 solve:
 	docker compose run --rm solve

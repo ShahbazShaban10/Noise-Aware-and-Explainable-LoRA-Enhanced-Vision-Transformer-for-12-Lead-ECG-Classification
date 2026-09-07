@@ -37,12 +37,23 @@ python -c "import ecgvit, pathlib; print('  ecgvit at', pathlib.Path(ecgvit.__fi
 
 log "checking torch and GPU"
 python - <<'PY'
-import sys, torch
+import os, sys, torch
 print(f"  torch          {torch.__version__}  (CUDA {torch.version.cuda})")
 if not torch.cuda.is_available():
-    print("  WARNING: no CUDA device visible; this schedule will be very slow on CPU.",
-          file=sys.stderr)
-    sys.exit(0)
+    # Hard failure by default. Harbor's Docker provider ignores [environment] gpus, so the
+    # device arrives only through environment/docker-compose.yaml, which needs the NVIDIA
+    # Container Toolkit on the host. If that is missing the container starts perfectly well
+    # and simply has no GPU -- and a silent CPU fallback would spend an hour producing
+    # metrics that look like a modelling failure instead of a missing runtime.
+    if os.environ.get("ALLOW_CPU") == "1":
+        print("  WARNING: no CUDA device visible; ALLOW_CPU=1 is set, so this schedule "
+              "runs on CPU and will take hours.", file=sys.stderr)
+        sys.exit(0)
+    print("\n  ERROR: no CUDA device is visible inside the container.\n"
+          "  Verify the host can pass a GPU through Docker at all:\n"
+          "    docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi\n"
+          "  Set ALLOW_CPU=1 to run anyway.", file=sys.stderr)
+    sys.exit(1)
 p = torch.cuda.get_device_properties(0)
 cap = f"sm_{p.major}{p.minor}"
 archs = torch.cuda.get_arch_list()

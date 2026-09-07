@@ -28,6 +28,7 @@ email = "staff.shahbaz.khanday@iitrpr.ac.in"
 author_name              = "Shahbaz Ahmad Khanday"
 author_email             = "staff.shahbaz.khanday@iitrpr.ac.in"
 difficulty               = "hard"
+gpu_requirement          = "1 CUDA device, sm_120-capable; attached via environment/docker-compose.yaml"
 category                 = "machine_learning"
 tags                     = ["medical-ai", "ecg-arrhythmia", "lora", "xai"]
 expert_time_estimate_min = 480.0
@@ -77,7 +78,11 @@ network_mode      = "no-network"
 build_timeout_sec = 2400.0
 os                = "linux"
 workdir           = "/app"
-gpus              = 1
+# `gpus` is deliberately NOT set. Harbor's Docker provider declares no GPU capability,
+# so any non-zero value here makes BaseEnvironment._validate_gpu_support abort the trial
+# before the container starts -- including the two runs that gate submission. The device
+# is attached through environment/docker-compose.yaml instead, and the requirement is
+# enforced at run time by solution/solve.sh. See that compose file for the full reason.
 memory_mb         = 16384
 storage_mb        = 20480
 mcp_servers       = []
