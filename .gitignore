@@ -31,6 +31,11 @@ jobs/
 logs/
 outputs/
 **/outputs/
+# ...and any hand-made copy of one. A backup named outputs_calibration_backup does
+# not match `outputs/`, which is how a whole run -- predictions.csv, a 6,874-row
+# record index, the lot -- once got committed by a plain `git add -A`.
+outputs_*/
+**/outputs_*/
 *.pt
 *.pth
 *.ckpt
