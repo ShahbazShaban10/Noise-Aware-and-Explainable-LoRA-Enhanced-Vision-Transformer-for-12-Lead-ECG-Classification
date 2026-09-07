@@ -1,0 +1,98 @@
+schema_version = "1.4"
+
+# Collected from the container after the agent phase so a failed run can be diagnosed
+# without re-running it.
+artifacts = ["/app/outputs"]
+
+[task]
+name        = "shahbaz/lightweight-explainable-lora-vit"
+version     = "1.0.0"
+description = """
+Build a parameter-efficient, explainable classifier for 7-class arrhythmia on 12-lead ECG: \
+denoise and window the signals, resolve multi-label SNOMED CT annotations to a single \
+canonical class, adapt a joint-lead transformer with low-rank adapters instead of full \
+fine-tuning, and produce an attribution layer whose explanations are validated by an \
+insertion-deletion faithfulness test and compared against AHA/ACC and ESC lead criteria.\
+"""
+keywords = [
+  "machine-learning", "medical-ai", "time-series", "transformers",
+  "parameter-efficient-fine-tuning", "lora", "explainable-ai",
+  "signal-processing", "snomed-ct", "reproducibility",
+]
+
+[[task.authors]]
+name  = "Shahbaz Ahmad Khanday"
+email = "staff.shahbaz.khanday@iitrpr.ac.in"
+
+[metadata]
+author_name              = "Shahbaz Ahmad Khanday"
+author_email             = "staff.shahbaz.khanday@iitrpr.ac.in"
+difficulty               = "hard"
+category                 = "machine_learning"
+tags                     = ["medical-ai", "ecg-arrhythmia", "lora", "xai"]
+expert_time_estimate_min = 480.0
+junior_time_estimate_min = 2400.0
+
+# Provenance of the method this task operationalises. Metadata only; Harbor ignores it.
+authoring_reference = """
+Noise-Aware and Explainable LoRA-Enhanced Vision Transformer framework for 12-Lead ECG \
+Classification (Qayoom, Khan, Khanday, Joshi & Wani).\
+"""
+dataset_citation = """
+Zheng, J., Zhang, J., Danioko, S., Yao, H., Guo, H. & Rakovski, C. A 12-lead \
+electrocardiogram database for arrhythmia research covering more than 10,000 patients. \
+Sci. Data 7, 48 (2020). CC-BY-4.0. A checksum-pinned subset is vendored at \
+/app/data/corpus; see environment/data/README.md.\
+"""
+clinical_use = "false"
+disclaimer = """
+Research artefact only. Not a medical device, not validated for clinical use, and not \
+evaluated in a reader study.\
+"""
+
+[agent]
+# The reference solution's graded schedule completes in well under an hour on a single
+# modern GPU. 5400 s leaves headroom for a slower card without inviting a run that stalls.
+timeout_sec = 5400.0
+
+[verifier]
+# The artefact tier reloads the checkpoint and re-runs inference over the test split, so
+# the verifier needs real time -- but far less than training.
+timeout_sec = 1800.0
+collect     = []
+
+[verifier.env]
+DATA_DIR     = "/app/data"
+OUTPUT_DIR   = "/app/outputs"
+CHAPMAN_ROOT = "/app/data/corpus"
+PYTHONPATH   = "/app"
+PYTHONHASHSEED = "0"
+MPLBACKEND   = "Agg"
+
+[environment]
+# Everything the task needs is baked into the image: the corpus subset, the SNOMED
+# vocabulary, the class map and the split spec. Nothing is fetched at run time, so the
+# task cannot break when an external host changes.
+network_mode      = "no-network"
+build_timeout_sec = 2400.0
+os                = "linux"
+workdir           = "/app"
+gpus              = 1
+memory_mb         = 16384
+storage_mb        = 20480
+mcp_servers       = []
+
+[environment.env]
+DATA_DIR       = "/app/data"
+OUTPUT_DIR     = "/app/outputs"
+CHAPMAN_ROOT   = "/app/data/corpus"
+PYTHONHASHSEED = "0"
+MPLBACKEND     = "Agg"
+
+[solution.env]
+# The graded schedule. Shorter than the manuscript's 150 + 30 so that an oracle run
+# completes inside [agent].timeout_sec; the full schedule remains reachable by overriding
+# these two variables.
+PRETRAIN_EPOCHS = "40"
+LORA_EPOCHS     = "15"
+DEVICE          = "auto"
