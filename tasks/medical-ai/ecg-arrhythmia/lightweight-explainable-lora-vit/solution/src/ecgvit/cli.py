@@ -722,7 +722,7 @@ def cmd_evaluate(args) -> int:
     _write_json(metrics, cfg.output_dir / "metrics.json")
     np.save(cfg.output_dir / "confusion_matrix.npy",
             np.asarray(metrics["confusion_matrix"], dtype=np.int64))
-    write_predictions_csv(pred, cfg.output_dir / "predictions.csv")
+    write_predictions_csv(pred, cfg.output_dir / "predictions.csv", class_names=names)
     if pred.embeddings is not None:
         np.savez_compressed(
             cfg.output_dir / "embeddings.npz",

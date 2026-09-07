@@ -494,9 +494,10 @@ CLINICALLY_EXPECTED_LEADS: Dict[str, List[str]] = {
     "AFIB": ["II", "V1"],
     "CD": ["V1", "V2"],
     "SB": ["II", "aVF"],
-    "ST": ["V3", "V4", "V5"],
+    "ST": ["II", "V1"],
     "SVT": ["II", "V1"],
     "NSR": ["II", "aVF"],
+    "VE": ["V1", "V5", "II"],
     "OTHER": ["V1", "II"],
 }
 
@@ -505,11 +506,19 @@ CLINICAL_CRITERIA: Dict[str, str] = {
     "CD": "QRS > 120 ms, RSR' in V1-V3 (RBBB) or broad slurred R in I/aVL (LBBB) "
           "(AHA/ACCF/HRS Part IV).",
     "SB": "Regular P waves with normal axis, rate < 60 bpm, prolonged RR (ACC/AHA/HRS 2018).",
-    "ST": "ST elevation >= 1 mm in two contiguous leads, or T inversion / depression in "
-          "precordial leads (Fourth Universal Definition of MI).",
+    # Under canonical_v2 the ST class is SINUS TACHYCARDIA (SNOMED 427084000) alone. The
+    # criterion previously cited here was the STEMI definition, inherited from the earlier
+    # taxonomy that merged five repolarisation findings into this bucket on the shared
+    # "ST" prefix. Citing an infarction criterion for a rate-defined rhythm class made the
+    # concordance table meaningless for it.
+    "ST": "Sinus rhythm at > 100 bpm: an upright P wave of normal axis before every QRS in "
+          "lead II, regular RR (ACC/AHA/HRS 2018).",
     "SVT": "Narrow-QRS tachycardia > 100 bpm, retrograde or absent P waves, regular RR "
            "(ACC/AHA/HRS 2015).",
     "NSR": "Regular P-QRS-T, PR 120-200 ms, QRS < 120 ms, rate 60-100 bpm (AHA/ACCF/HRS).",
+    "VE": "Premature wide QRS (> 120 ms) with no preceding P wave, discordant T wave and a "
+          "compensatory pause; V1 morphology separates right- from left-ventricular origin "
+          "(AHA/ACCF/HRS Part IV).",
     "OTHER": "Mixed morphology not meeting criteria for the primary classes.",
 }
 
