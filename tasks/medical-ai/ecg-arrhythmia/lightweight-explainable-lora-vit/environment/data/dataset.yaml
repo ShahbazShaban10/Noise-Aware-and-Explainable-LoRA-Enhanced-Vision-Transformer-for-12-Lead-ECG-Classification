@@ -16,13 +16,14 @@ primary:
   paper: >
     Zheng, J. et al. A 12-lead electrocardiogram database for arrhythmia research covering
     more than 10,000 patients. Scientific Data 7, 48 (2020).
-  cohort_used: Chapman-Shaoxing (JS-prefixed records)
+  cohort_used: Chapman-Shaoxing (JS-prefixed records), stratified subset -- see vendored_subset
   expected:
-    # Verified against the corpus this task was authored on.
-    # min_records is the hard gate; exact counts differ between the standalone
-    # Chapman-Shaoxing release and the combined Chapman+Ningbo release.
-    min_records: 10000
-    reference_record_count: 10247
+    # These describe the VENDORED SUBSET at environment/data/corpus, which is the corpus
+    # this task actually runs on. min_records is the hard gate: it exists to catch a
+    # mis-set corpus path or a partial copy, so it sits just under the shipped count
+    # rather than at the size of the upstream release.
+    min_records: 1800
+    reference_record_count: 1890
     n_leads: 12
     lead_order: [I, II, III, aVR, aVL, aVF, V1, V2, V3, V4, V5, V6]
     sampling_frequency_hz: 500
@@ -64,11 +65,45 @@ condition_names_csv:
     here 'AF' is atrial FLUTTER and 'AFIB' is fibrillation, while the PhysioNet/CinC 2021
     tables use 'AF' for fibrillation and 'AFL' for flutter.
 
+vendored_subset:
+  path: corpus/
+  manifest: corpus/manifest.sha256
+  record_count: 1890
+  approx_size_mb: 220
+  selected_from: 10240 indexed records of the 10247-record upstream release
+  resolution_order: canonical_v2
+  rationale: >
+    The task runs with no network, so the corpus must travel with the repository; the full
+    2.5 GB release cannot. Records were selected test-split-first, giving every class 70
+    test and 35 validation records, capped by availability, with the remaining budget shared
+    across training. Split membership is unchanged: it is a hash of the record id, so no
+    record moves between train, validation and test as a result of subsetting.
+  per_class_test_records:
+    NSR: 70
+    AFIB: 70
+    SB: 70
+    ST: 70
+    SVT: 70
+    CD: 70
+    VE: 32
+  ve_ceiling_note: >
+    VE has 32 test records because the full corpus contains only 32 -- 242 VE records exist
+    and the id hash places 32 of them in test. This is a property of the upstream release,
+    not of subsetting, and no larger subset can raise it. Report the Wilson interval for VE
+    rather than the point estimate.
+  comparability_warning: >
+    The subset's test split is near-balanced (70 per class) where the full corpus is not
+    (532 SB against 32 VE). Overall accuracy and balanced accuracy therefore converge, and
+    metrics measured here are NOT comparable with figures computed on the full corpus. Any
+    pass threshold must be set from a run on this subset.
+
 integrity:
-  # PhysioNet publishes SHA256SUMS.txt alongside the files. fetch_dataset.sh downloads it
-  # and verifies every file against it, so no digest is hard-coded here (hard-coding one
-  # would silently break whenever PhysioNet reissues the archive).
-  checksum_manifest_url: https://physionet.org/files/ecg-arrhythmia/1.0.0/SHA256SUMS.txt
+  # The vendored subset carries its own SHA-256 manifest, generated when it was built and
+  # committed alongside it. Verify with:  sha256sum -c corpus/manifest.sha256
+  # Upstream, PhysioNet publishes SHA256SUMS.txt for the full release; no digest is
+  # hard-coded here because that would break whenever PhysioNet reissues the archive.
+  subset_manifest: corpus/manifest.sha256
+  upstream_checksum_manifest_url: https://physionet.org/files/ecg-arrhythmia/1.0.0/SHA256SUMS.txt
   verify_command: "python -m ecgvit.cli verify-data"
 
 privacy:

@@ -144,6 +144,21 @@ def _cfg_from_args(args) -> PipelineConfig:
     return cfg
 
 
+def _try_plot(fn, *args, default=None, **kwargs):
+    """Run a figure-producing call; log and continue if it fails.
+
+    Figures are cosmetic. Every graded artefact is JSON, CSV or npy, so a plotting failure
+    -- a backend that will not initialise, a headless server, a font cache race -- must not
+    destroy a training run that has already succeeded. It is reported, not swallowed.
+    """
+    try:
+        return fn(*args, **kwargs)
+    except Exception as exc:                      # noqa: BLE001
+        log.warning("figure step %s failed (%s: %s); continuing without it",
+                    getattr(fn, "__name__", fn), type(exc).__name__, exc)
+        return default
+
+
 # ---------------------------------------------------------------------------
 # verify-data
 # ---------------------------------------------------------------------------
@@ -602,7 +617,8 @@ def cmd_train(args) -> int:
 
     from .evaluate import plot_training_curves
 
-    plot_training_curves(histories, cfg.output_dir / "figures" / "training_curves.png")
+    _try_plot(plot_training_curves, histories,
+              cfg.output_dir / "figures" / "training_curves.png")
     return 0
 
 
@@ -712,13 +728,15 @@ def cmd_evaluate(args) -> int:
             cfg.output_dir / "embeddings.npz",
             embeddings=pred.embeddings, labels=pred.y_true,
         )
-    plot_confusion_matrix(
+    _try_plot(plot_confusion_matrix,
         metrics["confusion_matrix"], names,
         cfg.output_dir / "figures" / "confusion_matrix.png",
         "Confusion matrix - LoRA-ViT (Chapman test set)",
     )
-    aps = plot_precision_recall(
-        pred, names, cfg.output_dir / "figures" / "precision_recall.png"
+    aps = _try_plot(
+        plot_precision_recall,
+        pred, names, cfg.output_dir / "figures" / "precision_recall.png",
+        default={},
     )
     _write_json(aps, cfg.output_dir / "average_precision.json")
 
@@ -785,7 +803,7 @@ def cmd_explain(args) -> int:
             env = upsample_cam(cam, cfg.model.patch_len, cfg.model.seq_len)
             rid = f"{names[cls]}_{j:04d}"
             np.save(xai_dir / f"gradcam_{rid}.npy", cam)
-            plot_gradcam_12lead(
+            _try_plot(plot_gradcam_12lead,
                 X[j].cpu().numpy(), env, fig_dir / f"gradcam_{rid}.png",
                 f"Grad-CAM | True: {names[cls]} | Pred: {names[pred_idx]} "
                 f"| Confidence: {probs[pred_idx]:.3f}",
@@ -809,7 +827,7 @@ def cmd_explain(args) -> int:
         cfg.xai.ig_confidence, cfg.xai.bootstrap_iterations, cfg.train.seed,
     )
     _write_rows(ig_imp.to_rows(), xai_dir / "integrated_gradients_lead_importance.csv")
-    plot_lead_importance(
+    _try_plot(plot_lead_importance,
         ig_imp, fig_dir / "ig_lead_importance.png",
         "Per-lead importance across arrhythmia classes (Integrated Gradients, 95% CI)",
     )
@@ -828,8 +846,10 @@ def cmd_explain(args) -> int:
         cfg.xai.ig_confidence, cfg.xai.bootstrap_iterations, cfg.train.seed,
     )
     _write_rows(shap_imp.to_rows(), xai_dir / "shap_lead_importance.csv")
-    global_shap = plot_global_lead_importance(
-        shap_imp, fig_dir / "shap_global_lead_importance.png"
+    global_shap = _try_plot(
+        plot_global_lead_importance,
+        shap_imp, fig_dir / "shap_global_lead_importance.png",
+        default={},
     )
     _write_json(global_shap, xai_dir / "shap_global_lead_importance.json")
 
@@ -841,7 +861,7 @@ def cmd_explain(args) -> int:
     faith["attribution_method"] = "IntegratedGradients"
     faith["faithful"] = bool(faith["deletion_auc"] < faith["insertion_auc"])
     _write_json(faith, xai_dir / "faithfulness.json")
-    plot_faithfulness(faith, fig_dir / "faithfulness.png")
+    _try_plot(plot_faithfulness, faith, fig_dir / "faithfulness.png")
 
     # ---- t-SNE ----------------------------------------------------------
     log.info("t-SNE of learned embeddings")
@@ -851,7 +871,7 @@ def cmd_explain(args) -> int:
         cfg.xai.tsne_samples, cfg.train.seed,
     )
     np.savez_compressed(xai_dir / "tsne.npz", Z=Z, labels=lab)
-    plot_tsne(Z, lab, fig_dir / "tsne.png",
+    _try_plot(plot_tsne, Z, lab, fig_dir / "tsne.png",
               "t-SNE of LoRA-ViT CLS embeddings (Chapman test set)")
 
     # ---- Clinical concordance -------------------------------------------

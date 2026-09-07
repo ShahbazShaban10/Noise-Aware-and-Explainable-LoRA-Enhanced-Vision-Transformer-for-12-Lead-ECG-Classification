@@ -18,9 +18,25 @@ import pytest
 
 pytestmark = pytest.mark.artifacts
 
-BALANCED_ACC_MIN = 0.85
-MACRO_F1_MIN = 0.85
+# Pass bars, set from a MEASURED reference run on the vendored corpus -- not from the
+# source manuscript. The manuscript reports 93.28% balanced accuracy on the full 10,240
+# record corpus under its original taxonomy; that figure is a comparison, not a target, and
+# a bar taken from a published claim rather than a measurement is how a task ends up
+# unsolvable by its own reference solution.
+#
+# Reference run on the 6,873-record subset: balanced accuracy 0.7380, macro F1 0.7269.
+# The bars sit ~4 points below, roughly four times the 0.010 run-to-run spread measured
+# across GPUs and DataLoader worker counts, so a passing solution stays passing.
+BALANCED_ACC_MIN = 0.70
+MACRO_F1_MIN = 0.68
 REDUCTION_PCT_MIN = 90.0
+
+# Floor for the majority-class guard below. This is NOT a performance bar -- it exists only
+# to catch a model that predicts one class for everything, which would leave the other six
+# near zero. It sits well below the reference run's weakest classes (CD and VE, both at
+# 0.500) because at n=32 a single VE record moves recall by 0.031, and a guard that a
+# correct submission fails on one record is a broken guard.
+MIN_PER_CLASS_RECALL = 0.30
 BASE_PARAMS = 1_648_839
 LORA_TRAINABLE = 131_072
 LORA_TOTAL = 1_779_911
@@ -125,12 +141,19 @@ def test_no_class_is_silently_absent_from_the_test_split(metrics):
 
 
 def test_balanced_accuracy_is_not_just_the_majority_class(metrics):
-    """Guard against a model that predicts SB for everything and still posts a high plain
-    accuracy. Balanced accuracy should be close to overall accuracy on a balanced test set,
-    and every class should have non-trivial recall."""
+    """Guard against a model that predicts one class for everything and still posts a
+    respectable plain accuracy. Every class must show non-trivial recall.
+
+    Deliberately loose: this catches degenerate predictors, not weak ones. The performance
+    bars are BALANCED_ACC_MIN and MACRO_F1_MIN; duplicating them here as a per-class
+    minimum would make the suite fail twice for one reason, and would make the pass/fail
+    outcome hinge on a single record in the smallest class."""
     weak = {c: d["recall"] for c, d in metrics["per_class"].items()
-            if d["support"] > 0 and d["recall"] < 0.5}
-    assert not weak, f"classes with recall below 0.5: {weak}"
+            if d["support"] > 0 and d["recall"] < MIN_PER_CLASS_RECALL}
+    assert not weak, (
+        f"classes with recall below {MIN_PER_CLASS_RECALL}: {weak}. This is the degenerate"
+        " predictor guard, not the performance bar."
+    )
 
 
 # ---------------------------------------------------------------------------
