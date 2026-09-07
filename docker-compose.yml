@@ -1,0 +1,53 @@
+# Build and run the task environment with GPU passthrough.
+#
+#   docker compose build
+#   docker compose run --rm solve      # reference pipeline end to end
+#   docker compose run --rm verify     # grade whatever is in outputs/
+#   docker compose run --rm shell      # interactive
+#
+# On Windows this needs Docker Desktop with WSL2 integration and the NVIDIA Container
+# Toolkit. Confirm the GPU reaches a container first:
+#   docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi
+
+services:
+  base: &base
+    build:
+      context: ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit
+      dockerfile: environment/Dockerfile
+    image: ecgvit:1.0.0
+    working_dir: /app
+    environment:
+      DATA_DIR: /app/data
+      OUTPUT_DIR: /app/outputs
+      CHAPMAN_ROOT: /app/data/corpus
+      PYTHONHASHSEED: "0"
+      MPLBACKEND: Agg
+    volumes:
+      - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/outputs:/app/outputs
+      - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/solution:/solution:ro
+      - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/tests:/tests:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  solve:
+    <<: *base
+    command: ["bash", "/solution/solve.sh"]
+
+  verify:
+    <<: *base
+    volumes:
+      - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/outputs:/app/outputs
+      - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/tests:/tests:ro
+      - ./logs/verifier:/logs/verifier
+    command: ["bash", "/tests/test.sh"]
+
+  shell:
+    <<: *base
+    command: ["bash"]
+    stdin_open: true
+    tty: true
