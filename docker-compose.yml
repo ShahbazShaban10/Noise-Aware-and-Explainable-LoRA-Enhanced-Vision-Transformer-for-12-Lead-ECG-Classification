@@ -17,6 +17,8 @@ services:
       # relative to it. Building from the task directory would fail on every COPY.
       context: ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/environment
     image: ecgvit:1.0.0
+    # See environment/docker-compose.yaml: 64 MB of /dev/shm kills DataLoader workers.
+    shm_size: '2gb'
     working_dir: /app
     environment:
       DATA_DIR: /app/data

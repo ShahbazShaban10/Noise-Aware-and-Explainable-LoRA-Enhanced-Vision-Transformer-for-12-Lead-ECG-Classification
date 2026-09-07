@@ -1,0 +1,19 @@
+{
+  "device": "cuda",
+  "torch": "2.8.0+cu128",
+  "gpu_name": "NVIDIA GeForce RTX 5070 Laptop GPU",
+  "capability": "sm_120",
+  "total_memory_gb": 7.96,
+  "cuda_runtime": "12.8",
+  "compiled_architectures": [
+    "sm_61",
+    "sm_70",
+    "sm_75",
+    "sm_80",
+    "sm_86",
+    "sm_90",
+    "sm_100",
+    "sm_120"
+  ],
+  "architecture_supported_by_build": true
+}

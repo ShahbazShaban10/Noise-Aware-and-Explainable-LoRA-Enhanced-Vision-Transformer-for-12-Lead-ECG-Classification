@@ -5,7 +5,8 @@ A 12-lead electrocardiogram corpus in WFDB format is mounted read-only at
 header's `#Dx:` line carries one or more SNOMED CT concept identifiers assigned by
 licensed cardiologists. Reference inputs sit alongside it: `/app/data/class_map_7.json`
 gives the SNOMED code set for each of seven classes and the order in which to resolve a
-record's codes to exactly one of them, `/app/data/splits/split_spec.yaml` specifies the
+record's codes to exactly one of them (use the order named by that file's
+`default_resolution_order` field), `/app/data/splits/split_spec.yaml` specifies the
 train/validation/test partition, and `/app/data/snomed_conditions.csv` is the code
 vocabulary.
 

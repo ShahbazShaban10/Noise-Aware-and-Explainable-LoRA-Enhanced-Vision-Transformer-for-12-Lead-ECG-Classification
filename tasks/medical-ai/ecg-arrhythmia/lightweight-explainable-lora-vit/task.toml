@@ -64,6 +64,7 @@ collect     = []
 
 [verifier.env]
 DATA_DIR     = "/app/data"
+RESOLUTION_ORDER = "canonical_v2"
 OUTPUT_DIR   = "/app/outputs"
 CHAPMAN_ROOT = "/app/data/corpus"
 PYTHONPATH   = "/app"
@@ -89,6 +90,7 @@ mcp_servers       = []
 
 [environment.env]
 DATA_DIR       = "/app/data"
+RESOLUTION_ORDER = "canonical_v2"
 OUTPUT_DIR     = "/app/outputs"
 CHAPMAN_ROOT   = "/app/data/corpus"
 PYTHONHASHSEED = "0"
