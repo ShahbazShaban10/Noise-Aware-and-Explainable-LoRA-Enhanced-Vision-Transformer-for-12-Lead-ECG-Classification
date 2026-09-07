@@ -1,4 +1,4 @@
-# Lightweight explainable LoRA-ViT — 12-lead ECG arrhythmia task package
+# Lightweight explainable LoRA-ViT for 12-lead ECG arrhythmia task package
 
 An agent-benchmark task package for 7-class arrhythmia classification from 12-lead ECG. An
 agent is given `instruction.md`, a corpus and a GPU; it must build a parameter-efficient,
