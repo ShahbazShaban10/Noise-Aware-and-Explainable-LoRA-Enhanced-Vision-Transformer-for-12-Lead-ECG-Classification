@@ -1,0 +1,37 @@
+# GPU attachment for Harbor's Docker environment.
+#
+# Harbor's Docker provider declares no GPU capability at all: DockerEnvironment.capabilities
+# omits `gpus`, so EnvironmentCapabilities.gpus stays False, and
+# BaseEnvironment._validate_gpu_support rejects the trial before the container is ever
+# created:
+#
+#   RuntimeError: Task requires 1 GPU(s) but EnvironmentType.DOCKER environment does not
+#   support GPU allocation.
+#
+# No task field and no CLI flag changes that -- `[environment] gpus` is the very thing the
+# check reads, and the only providers that set gpus=True are the cloud ones (Modal, Daytona,
+# Beam, GKE, OpenSandbox), none of which is reachable under `network_mode = "no-network"`.
+#
+# The supported extension point is this file. Harbor merges a task-authored
+# environment/docker-compose.yaml after its own build override
+# (DockerEnvironment._docker_compose_paths, "Option 2: Task with extra services"), so the
+# reservation below is the compose spelling of `docker run --gpus 1` and is what actually
+# attaches the device. Device passthrough is independent of networking, so it holds under
+# the no-network policy and under the egress-control sidecar.
+#
+# Consequence, recorded rather than buried: `[environment] gpus` is deliberately unset in
+# task.toml, because setting it aborts the run. The requirement is still enforced at run
+# time -- solution/solve.sh refuses to train if torch reports no usable CUDA device with
+# sm_120 kernels, and tests/ grade artefacts that cannot be produced without one.
+#
+# `build:` is intentionally absent: it comes from Harbor's docker-compose-build.yaml, whose
+# context is environment/. Redefining it here would re-anchor the context to this file.
+services:
+  main:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

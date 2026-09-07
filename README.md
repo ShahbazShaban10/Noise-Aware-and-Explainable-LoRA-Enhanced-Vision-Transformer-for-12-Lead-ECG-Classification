@@ -21,6 +21,7 @@ is the reference implementation.
     ├── task.toml             environment contract, timeouts, artefacts
     ├── environment/
     │   ├── Dockerfile        CUDA 12.8, every version pinned
+    │   ├── docker-compose.yaml  GPU attachment (Harbor's Docker provider has none)
     │   └── data/             SNOMED vocabulary, class map, split spec, corpus
     ├── solution/
     │   ├── solve.sh          reference entry point
@@ -95,13 +96,37 @@ Built to the reference architecture this is **1,648,839** backbone parameters an
 
 ## Environment
 
-Everything is pinned: a CUDA 12.8.1 / cuDNN base image, Python 3.11, and thirteen exact
+Everything is pinned: a CUDA 12.8.1 / cuDNN base image, Python 3.10 — Ubuntu 22.04's own
+interpreter, from main — and thirteen exact
 Python versions including `torch==2.8.0` from the cu128 index. The image build fails rather
 than ships if the installed torch has no kernels for the target GPU architecture — the
 RTX 50-series is `sm_120`, and wheels built against CUDA ≤ 12.6 contain no kernels for it.
 
 The task runs with `network_mode = "no-network"`: every input is baked into the image, so
 nothing can drift under it between runs.
+
+Two things about this environment are not obvious, and both were found by reading Harbor's
+source rather than its documentation.
+
+*The build context is `environment/`, not the task directory.* Harbor points the compose
+build context at the environment directory, so every `COPY` in the Dockerfile is relative
+to `environment/` and nothing above it can be copied at all. `docker-compose.yml` and the
+`Makefile` build the same way, so a hand build and a Harbor build cannot diverge.
+
+*Harbor's Docker provider cannot allocate GPUs.* `DockerEnvironment.capabilities` leaves
+`gpus` at its `False` default, so `[environment] gpus = 1` does not request a device — it
+aborts the trial outright, before the container is created:
+
+```
+RuntimeError: Task requires 1 GPU(s) but EnvironmentType.DOCKER environment does not
+support GPU allocation.
+```
+
+Only the cloud providers set `gpus=True`, and none is reachable under `no-network`. So
+`gpus` is left unset and the device is attached by `environment/docker-compose.yaml`, which
+Harbor merges after its own build override. `solution/solve.sh` then fails the run outright
+if no CUDA device is visible, so a host missing the NVIDIA Container Toolkit says so in
+seconds instead of spending an hour training on CPU.
 
 ## Data
 
@@ -113,11 +138,14 @@ a second line of defence.
 
 ## Status
 
+Done:
+
+- The corpus subset is built and committed — 6,873 records, 792 MB, with `manifest.sha256`.
+- `BALANCED_ACC_MIN` / `MACRO_F1_MIN` are calibrated from a measured reference run on the
+  vendored subset rather than from a published claim.
+
 Outstanding before submission:
 
-- Build and commit the corpus subset (`environment/data/corpus/` and its manifest).
-- Calibrate `BALANCED_ACC_MIN` / `MACRO_F1_MIN` in `tests/test_artifacts.py` from a measured
-  reference run rather than from a published claim, then re-run Oracle.
 - Run both checks and fill in `VALIDATION.md`.
 - Write and sign `DECLARATION.md`.
 - Three assertions in `tests/test_artifacts.py` pin exact parameter counts that

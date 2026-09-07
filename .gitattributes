@@ -1,0 +1,22 @@
+# Line endings are part of this package's contract, not a style preference.
+#
+# environment/data/corpus/manifest.sha256 pins the byte content of every vendored WFDB
+# record. With no rules here, Git's autocrlf rewrote LF to CRLF in the .hea headers on
+# checkout, and the manifest silently stopped holding: the headers no longer hashed to
+# their recorded digests, and `sha256sum -c` could not parse the manifest at all once its
+# own lines had gained a trailing CR. What is committed was always correct -- the damage
+# happened in the working tree, which is also what `docker build` copies into the image.
+# Marking these paths non-text stops Git transforming them on any platform.
+*.hea           -text
+*.mat           -text
+*.dat           -text
+manifest.sha256 -text
+
+# Shell scripts run inside a Linux container. A CRLF shebang there fails with
+# "bad interpreter: /bin/bash^M" -- a confusing way to lose an hour.
+*.sh            text eol=lf
+
+# Read by the Linux Docker daemon, not by an editor on the host.
+Dockerfile      text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf

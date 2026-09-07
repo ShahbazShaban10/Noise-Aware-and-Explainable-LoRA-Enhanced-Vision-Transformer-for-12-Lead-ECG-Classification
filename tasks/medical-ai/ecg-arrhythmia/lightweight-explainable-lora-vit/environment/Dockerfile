@@ -9,8 +9,11 @@
 # CUDA 12.8 is the floor: the RTX 50-series (Blackwell) is compute capability sm_120 and
 # no earlier CUDA toolkit emits kernels for it.
 #
-# Build (from the task directory):
-#   docker build -t ecgvit:1.0.0 -f environment/Dockerfile .
+# Build context is the ENVIRONMENT directory, not the task directory. Harbor sets the
+# compose build context to environment/ (docker.py -> ComposeInfraEnvVars.context_dir,
+# consumed by docker-compose-build.yaml), so every COPY path below is relative to
+# environment/. Build it by hand the same way:
+#   docker build -t ecgvit:1.0.0 environment/
 
 FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
 
@@ -53,10 +56,13 @@ RUN python -m pip install --upgrade "pip==24.3.1" "setuptools==75.6.0" "wheel==0
 WORKDIR /app
 
 # --- Python dependencies (separate layers so the heavy torch layer caches) ---
-COPY environment/requirements-cu128.txt /tmp/requirements-cu128.txt
+# COPY sources are relative to environment/. A path like `environment/requirements.txt`
+# or `instruction.md` resolves outside the build context and fails the build under
+# Harbor, even though it works with a hand-rolled `docker build -f ... <task dir>`.
+COPY requirements-cu128.txt /tmp/requirements-cu128.txt
 RUN python -m pip install -r /tmp/requirements-cu128.txt
 
-COPY environment/requirements.txt /tmp/requirements.txt
+COPY requirements.txt /tmp/requirements.txt
 RUN python -m pip install -r /tmp/requirements.txt
 
 # Fail the build rather than ship an image whose torch cannot drive the target GPU.
@@ -91,8 +97,10 @@ TORCHCHECK
 # environment/data/ carries the vendored corpus subset, the SNOMED vocabulary, the class
 # map and the split spec. The task runs with no network, so this is the only source of
 # data and nothing can drift under it.
-COPY environment/data/ /app/data/
-COPY instruction.md /app/instruction.md
+COPY data/ /app/data/
+# instruction.md is deliberately NOT copied: it sits above the build context, and
+# Harbor hands the instruction to the agent as its prompt rather than as a file.
+# Nothing in solution/ or tests/ reads /app/instruction.md.
 
 # The corpus is an input, not something to be edited.
 RUN chmod -R a-w /app/data/corpus 2>/dev/null || true
