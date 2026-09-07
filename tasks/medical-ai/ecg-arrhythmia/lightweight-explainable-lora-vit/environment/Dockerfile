@@ -31,17 +31,23 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
 # --- OS packages, version-pinned -------------------------------------------
+# Python 3.10 is Ubuntu 22.04's own interpreter, from main. An earlier version of this
+# file asked for python3.11, which jammy does not package at all -- it would have needed
+# the deadsnakes PPA, i.e. an external apt repository fetched at build time, which is
+# exactly the "changing web resource" the environment is supposed to avoid. Every pinned
+# dependency supports 3.10 and solution/pyproject.toml declares requires-python >=3.10.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3.11=3.11.* \
-        python3.11-venv=3.11.* \
-        python3.11-dev=3.11.* \
+        python3.10 \
+        python3.10-venv \
+        python3.10-dev \
         python3-pip \
         ca-certificates \
         libgomp1 \
     && rm -rf /var/lib/apt/lists/* \
-    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
-    && update-alternatives --install /usr/bin/python  python  /usr/bin/python3.11 1
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
+    && update-alternatives --install /usr/bin/python  python  /usr/bin/python3.10 1
 
+RUN python --version && python -c "import sys; assert sys.version_info[:2] == (3, 10), sys.version"
 RUN python -m pip install --upgrade "pip==24.3.1" "setuptools==75.6.0" "wheel==0.45.1"
 
 WORKDIR /app
@@ -54,16 +60,32 @@ COPY environment/requirements.txt /tmp/requirements.txt
 RUN python -m pip install -r /tmp/requirements.txt
 
 # Fail the build rather than ship an image whose torch cannot drive the target GPU.
-RUN python - <<'PY'
+#
+# This checks torch.version.cuda, NOT torch.cuda.get_arch_list(). On torch 2.8 the
+# latter begins `if not is_available(): return []` -- it needs a live device, and
+# docker build steps run without --gpus, so it returns an empty list on a perfectly
+# good image. The CUDA build version is device-free and is what actually separates the
+# cu128 wheel from the default PyPI one that carries no sm_120 kernels. The arch list
+# itself is verified at RUN time by solution/solve.sh, where a GPU is attached and the
+# check means something.
+RUN python - <<'TORCHCHECK'
 import torch
-archs = torch.cuda.get_arch_list()
-print("torch", torch.__version__, "cuda", torch.version.cuda)
-print("arch list:", archs)
-assert any("sm_120" in a or "sm_90" in a for a in archs), (
-    f"this torch build targets {archs} and cannot run on Blackwell (sm_120); "
-    "pin a cu128 or newer wheel in requirements-cu128.txt"
+print("torch", torch.__version__, "| CUDA build", torch.version.cuda)
+assert torch.version.cuda is not None, (
+    "a CPU-only torch wheel is installed; requirements-cu128.txt must be installed "
+    "from the cu128 index"
 )
-PY
+major, minor = (int(x) for x in torch.version.cuda.split(".")[:2])
+assert (major, minor) >= (12, 8), (
+    f"torch is built against CUDA {torch.version.cuda}; Blackwell (sm_120) needs 12.8 "
+    "or newer. Check the --index-url in environment/requirements-cu128.txt"
+)
+try:                      # informational: populated only when a device is visible
+    print("arch flags:", torch._C._cuda_getArchFlags())
+except Exception as exc:
+    print(f"arch flags unavailable at build time ({type(exc).__name__}); "
+          "solve.sh verifies them at run time")
+TORCHCHECK
 
 # --- Task inputs ------------------------------------------------------------
 # environment/data/ carries the vendored corpus subset, the SNOMED vocabulary, the class
