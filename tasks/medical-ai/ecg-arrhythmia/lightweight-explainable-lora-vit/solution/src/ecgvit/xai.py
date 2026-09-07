@@ -111,6 +111,26 @@ def upsample_cam(cam: np.ndarray, patch_len: int, n_samples: int = N_SAMPLES) ->
     return out[:n_samples]
 
 
+def _agg_pyplot():
+    """Return pyplot with a non-interactive backend, tolerantly.
+
+    Written this way because `import matplotlib; matplotlib.use("Agg")` raised
+    AttributeError on a working matplotlib 3.10 install -- and a cosmetic figure must never
+    abort a training run that has already produced its graded artefacts. MPLBACKEND is the
+    documented, import-order-independent way to select a backend; use() is only a fallback.
+    """
+    import os
+    os.environ.setdefault("MPLBACKEND", "Agg")
+    import matplotlib
+    try:
+        if matplotlib.get_backend().lower() != "agg":
+            matplotlib.use("Agg")
+    except Exception:                      # noqa: BLE001 - backend selection is best-effort
+        pass
+    import matplotlib.pyplot as plt
+    return plt
+
+
 def plot_gradcam_12lead(
     signal: np.ndarray,
     cam_samples: np.ndarray,
@@ -119,10 +139,7 @@ def plot_gradcam_12lead(
     fs: float = 500.0,
 ) -> None:
     """Figure 3 style: 12 stacked lead panels with the CAM envelope shaded."""
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _agg_pyplot()
 
     t = np.arange(signal.shape[-1]) / fs
     fig, axes = plt.subplots(N_LEADS, 1, figsize=(11, 13), sharex=True)
@@ -277,10 +294,7 @@ def per_class_lead_importance(
 
 
 def plot_lead_importance(imp: LeadImportance, path: Path, title: str) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _agg_pyplot()
 
     K, L = imp.mean.shape
     width = 0.8 / max(K, 1)
@@ -312,10 +326,7 @@ def plot_lead_importance(imp: LeadImportance, path: Path, title: str) -> None:
 
 def plot_global_lead_importance(imp: LeadImportance, path: Path) -> Dict[str, float]:
     """Figure 8: SHAP-based global lead importance, averaged over classes."""
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _agg_pyplot()
 
     present = [i for i, c in enumerate(imp.class_names) if imp.n_samples.get(c, 0) > 0]
     global_mean = imp.mean[present].mean(axis=0) if present else imp.mean.mean(axis=0)
@@ -401,10 +412,7 @@ def insertion_deletion(
 
 
 def plot_faithfulness(res: Dict[str, object], path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _agg_pyplot()
 
     fr = np.asarray(res["fractions"]) * 100
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
@@ -456,10 +464,7 @@ def tsne_embeddings(
 
 def plot_tsne(Z: np.ndarray, labels: np.ndarray, path: Path, title: str,
               class_names: Sequence[str] = CLASS_NAMES) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _agg_pyplot()
 
     fig, ax = plt.subplots(figsize=(7.5, 6.5))
     cmap = plt.get_cmap("tab10")

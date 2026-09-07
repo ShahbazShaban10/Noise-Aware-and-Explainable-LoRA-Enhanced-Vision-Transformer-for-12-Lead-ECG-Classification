@@ -170,11 +170,28 @@ def write_predictions_csv(pred: Predictions, path: Path, class_names=CLASS_NAMES
             )
 
 
-def plot_confusion_matrix(cm, class_names, path: Path, title: str) -> None:
-    import matplotlib
+def _agg_pyplot():
+    """Return pyplot with a non-interactive backend, tolerantly.
 
-    matplotlib.use("Agg")
+    Written this way because `import matplotlib; matplotlib.use("Agg")` raised
+    AttributeError on a working matplotlib 3.10 install -- and a cosmetic figure must never
+    abort a training run that has already produced its graded artefacts. MPLBACKEND is the
+    documented, import-order-independent way to select a backend; use() is only a fallback.
+    """
+    import os
+    os.environ.setdefault("MPLBACKEND", "Agg")
+    import matplotlib
+    try:
+        if matplotlib.get_backend().lower() != "agg":
+            matplotlib.use("Agg")
+    except Exception:                      # noqa: BLE001 - backend selection is best-effort
+        pass
     import matplotlib.pyplot as plt
+    return plt
+
+
+def plot_confusion_matrix(cm, class_names, path: Path, title: str) -> None:
+    plt = _agg_pyplot()
 
     cm = np.asarray(cm)
     fig, ax = plt.subplots(figsize=(7, 6))
@@ -199,10 +216,7 @@ def plot_confusion_matrix(cm, class_names, path: Path, title: str) -> None:
 
 
 def plot_precision_recall(pred: Predictions, class_names, path: Path) -> Dict[str, float]:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _agg_pyplot()
     from sklearn.metrics import average_precision_score, precision_recall_curve
 
     fig, ax = plt.subplots(figsize=(7, 6))
@@ -228,10 +242,7 @@ def plot_precision_recall(pred: Predictions, class_names, path: Path) -> Dict[st
 
 
 def plot_training_curves(histories, path: Path) -> None:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt = _agg_pyplot()
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
     for hist in histories:
