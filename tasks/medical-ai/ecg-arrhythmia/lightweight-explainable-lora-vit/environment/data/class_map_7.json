@@ -73,7 +73,7 @@
       "NSR"
     ]
   },
-  "default_resolution_order": "clinical_specificity",
+  "default_resolution_order": "canonical_v2",
   "resolution_order_notes": {
     "conduction_first": "Conduction disturbance is claimed BEFORE any rhythm class. Rationale: in Chapman-Shaoxing a bundle-branch block or AV block nearly always co-occurs with a rhythm code, so any ordering that lets rhythm win leaves CD nearly empty (measured: 59 records total, 41 in train). Conduction status is a property of the QRS and is independent of the underlying rhythm, so it is the more specific finding and the one the class is named for. Cost: a record with sinus bradycardia AND right bundle branch block is labelled CD, not SB, so SB loses its conduction-affected members. State this explicitly in any write-up -- it is a labelling decision, not a fact about the data.",
     "rhythm_first": "Pathological rhythms first, then conduction disturbance, then sinus rhythm. MEASURED ON THE REAL CORPUS: this leaves CD with only 59 records (41 train / 9 val / 9 test), because conduction findings in Chapman almost always accompany a rhythm code that claims the record first. A 9-record test class cannot support a reportable per-class metric. Do not use for a 7-class headline result; see docs/CLASS_MAPPING.md.",

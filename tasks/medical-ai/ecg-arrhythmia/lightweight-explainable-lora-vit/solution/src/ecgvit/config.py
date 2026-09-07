@@ -205,7 +205,11 @@ class PipelineConfig:
     chapman_root: Optional[Path] = None
     output_dir: Path = Path("outputs")
     data_dir: Optional[Path] = None
-    resolution_order: str = "clinical_specificity"
+    # canonical_v2, not clinical_specificity: the vendored corpus is selected under it,
+    # environment/data/dataset.yaml declares it, and tests/ grade against it. Kept in
+    # step with class_map_7.json::default_resolution_order by
+    # test_default_order_is_the_one_documented_in_the_class_map.
+    resolution_order: str = "canonical_v2"
     recipe: str = "paper"
     #: Cross-validation round currently being built, or None for the ordinary split.
     #: Set by `cv`; the number of folds lives in TrainConfig.cv_folds.

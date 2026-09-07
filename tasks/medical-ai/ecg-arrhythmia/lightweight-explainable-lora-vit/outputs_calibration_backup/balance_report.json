@@ -1,0 +1,31 @@
+{
+  "unique_support": {
+    "NSR": 1157,
+    "AFIB": 1093,
+    "SB": 1156,
+    "ST": 943,
+    "SVT": 455,
+    "CD": 858,
+    "VE": 174
+  },
+  "support": {
+    "NSR": 1157,
+    "AFIB": 1093,
+    "SB": 1156,
+    "ST": 943,
+    "SVT": 455,
+    "CD": 858,
+    "VE": 174
+  },
+  "duplication_factor": {
+    "NSR": 1.0,
+    "AFIB": 1.0,
+    "SB": 1.0,
+    "ST": 1.0,
+    "SVT": 1.0,
+    "CD": 1.0,
+    "VE": 1.0
+  },
+  "target": 0,
+  "strategy": "none_natural_distribution"
+}

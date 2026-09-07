@@ -31,7 +31,17 @@ die() { printf '\n[solve] ERROR: %s\n' "$*" >&2; exit 1; }
 command -v python >/dev/null 2>&1 || die "python not found on PATH"
 
 log "installing the reference package so the verifier can import it too"
-python -m pip install --no-deps --no-build-isolation "$SCRIPT_DIR" \
+# Build from a writable copy, never from $SCRIPT_DIR itself. With --no-build-isolation the
+# setuptools backend writes build/lib/ inside the source tree, so a read-only /solution
+# fails with "could not create 'build/lib/ecgvit': Read-only file system". Harbor uploads
+# solution/ as a writable copy and never hits this, but docker-compose.yml mounts it :ro --
+# and a grader mounting the reference implementation read-only is doing the sensible thing,
+# not the wrong thing. The copy costs a few hundred kilobytes.
+BUILD_TMP="$(mktemp -d)"
+trap 'rm -rf "$BUILD_TMP"' EXIT
+BUILD_SRC="$BUILD_TMP/ecgvit-src"
+cp -r "$SCRIPT_DIR" "$BUILD_SRC" || die "could not copy $SCRIPT_DIR to a writable location"
+python -m pip install --no-deps --no-build-isolation "$BUILD_SRC" \
   || die "could not install the ecgvit package from $SCRIPT_DIR"
 python -c "import ecgvit, pathlib; print('  ecgvit at', pathlib.Path(ecgvit.__file__).parent)"
 
@@ -79,11 +89,18 @@ if [ "${SMOKE:-0}" = "1" ]; then
   LORA_EPOCHS=1
 fi
 
-COMMON=(--chapman-root "$CHAPMAN_ROOT"
-        --output-dir   "$OUTPUT_DIR"
-        --data-dir     "$DATA_DIR"
-        --device       "$DEVICE"
-        --batch-size   "$BATCH_SIZE")
+# The taxonomy is part of the contract, not a preference. Passed explicitly rather than
+# left to the library default, because that is exactly how this script and
+# scripts/run_local.* silently disagreed: run_local passes canonical_v2, solve.sh passed
+# nothing, so Harbor trained on OTHER-labelled records and was graded against VE.
+RESOLUTION_ORDER="${RESOLUTION_ORDER:-canonical_v2}"
+
+COMMON=(--chapman-root     "$CHAPMAN_ROOT"
+        --output-dir       "$OUTPUT_DIR"
+        --data-dir         "$DATA_DIR"
+        --device           "$DEVICE"
+        --batch-size       "$BATCH_SIZE"
+        --resolution-order "$RESOLUTION_ORDER")
 
 mkdir -p "$OUTPUT_DIR"
 

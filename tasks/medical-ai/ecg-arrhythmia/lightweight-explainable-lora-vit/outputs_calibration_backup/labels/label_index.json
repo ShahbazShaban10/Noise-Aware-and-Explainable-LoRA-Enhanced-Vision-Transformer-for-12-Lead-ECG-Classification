@@ -1,0 +1,67 @@
+{
+  "classes": [
+    "NSR",
+    "AFIB",
+    "SB",
+    "ST",
+    "SVT",
+    "CD",
+    "VE"
+  ],
+  "resolution_order_name": "canonical_v2",
+  "resolution_order": [
+    "CD",
+    "VE",
+    "AFIB",
+    "SVT",
+    "ST",
+    "SB",
+    "NSR"
+  ],
+  "definitions_source": "acronym_buckets_canonical_v2 (resolved against the shipped vocabulary); 3 redundant alternate spelling(s) unmatched: CD:LBBB, CD:LBBBB, CD:IDC",
+  "class_to_codes": {
+    "NSR": [
+      "426783006",
+      "427393009"
+    ],
+    "AFIB": [
+      "164889003",
+      "164890007"
+    ],
+    "SB": [
+      "426177001"
+    ],
+    "ST": [
+      "427084000"
+    ],
+    "SVT": [
+      "233896004",
+      "233897008",
+      "251166008",
+      "426761007",
+      "713422000"
+    ],
+    "CD": [
+      "27885002",
+      "28189009",
+      "54016002",
+      "59118001",
+      "74390002",
+      "164909002",
+      "195042002",
+      "195060002",
+      "233917008",
+      "270492004",
+      "698252002"
+    ],
+    "VE": [
+      "11157007",
+      "13640000",
+      "17338001",
+      "75532003",
+      "164884008",
+      "251180001"
+    ]
+  },
+  "fallback_class": null
+}

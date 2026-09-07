@@ -28,6 +28,11 @@
 # context is environment/. Redefining it here would re-anchor the context to this file.
 services:
   main:
+    # PyTorch DataLoader workers pass tensors through /dev/shm. Docker's default is 64 MB,
+    # which is far too small for 12x5000 float32 batches: the workers die with
+    # "Bus error ... DataLoader worker killed by signal", which reads like a code fault
+    # but is purely a container limit.
+    shm_size: '2gb'
     deploy:
       resources:
         reservations:
