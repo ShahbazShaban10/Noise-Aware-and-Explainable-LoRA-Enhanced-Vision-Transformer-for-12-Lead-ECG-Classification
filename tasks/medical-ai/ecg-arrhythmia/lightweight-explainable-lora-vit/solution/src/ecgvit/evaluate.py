@@ -147,7 +147,19 @@ def compute_metrics(
     }
 
 
-def write_predictions_csv(pred: Predictions, path: Path, class_names=CLASS_NAMES) -> None:
+def write_predictions_csv(pred: Predictions, path: Path, class_names=None) -> None:
+    """Write per-record predictions and class probabilities.
+
+    class_names defaults to the ACTIVE names, not the module constant. Defaulting to the
+    static tuple wrote a predictions.csv whose true_label values and prob_* columns said
+    OTHER while metrics.json, label_index.json and the confusion matrix from the same run
+    said VE -- the class list belongs to the resolution order, and canonical_v2 renames
+    OTHER to VE. Any caller that forgot the argument silently produced an artefact that
+    disagreed with every other artefact beside it.
+    """
+    if class_names is None:
+        from .config import active_class_names
+        class_names = active_class_names()
     import csv
 
     path.parent.mkdir(parents=True, exist_ok=True)

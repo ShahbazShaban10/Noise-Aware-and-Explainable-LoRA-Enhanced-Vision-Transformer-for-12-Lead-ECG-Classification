@@ -151,3 +151,15 @@ def small_model():
     m_cfg = ModelConfig(seq_len=1000, patch_len=100, embed_dim=32, depth=2, num_heads=4)
     l_cfg = LoRAConfig(rank=4, alpha=8)
     return build_model(m_cfg, l_cfg) + (m_cfg, l_cfg)
+
+
+@pytest.fixture(scope="session")
+def resolution_order():
+    """The SNOMED resolution order under test.
+
+    The corpus tier used to hardcode "rhythm_first". That silently asked the wrong question
+    of a package configured for canonical_v2: it reported OTHER as an empty class when
+    OTHER does not exist in that taxonomy at all. Override with $RESOLUTION_ORDER.
+    """
+    import os
+    return os.environ.get("RESOLUTION_ORDER", "canonical_v2")

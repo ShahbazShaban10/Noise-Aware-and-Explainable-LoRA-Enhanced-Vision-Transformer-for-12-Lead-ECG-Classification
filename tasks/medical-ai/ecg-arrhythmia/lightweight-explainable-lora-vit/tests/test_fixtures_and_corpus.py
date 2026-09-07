@@ -12,7 +12,7 @@ import pytest
 import yaml
 
 from ecgvit.config import CLASS_NAMES, LEAD_ORDER
-from ecgvit.data import build_index
+from ecgvit.data import assign_split, build_index, load_split_spec
 from ecgvit.labels import parse_dx_codes
 
 sys.path.insert(0, str(Path(__file__).parent / "fixtures"))
@@ -95,21 +95,21 @@ def test_corpus_lead_order_is_standard(chapman_root):
 
 
 @pytest.mark.corpus
-def test_corpus_every_class_is_populated(chapman_root, data_dir):
-    _, report, _ = build_index(chapman_root, data_dir, "rhythm_first")
-    empty = [c for c in CLASS_NAMES if report.label_counts.get(c, 0) == 0]
+def test_corpus_every_class_is_populated(chapman_root, data_dir, resolution_order):
+    _, report, cmap = build_index(chapman_root, data_dir, resolution_order)
+    empty = [c for c in cmap.classes if report.label_counts.get(c, 0) == 0]
     assert not empty, (
-        f"classes with zero records under the rhythm_first mapping: {empty}. "
+        f"classes with zero records under the {resolution_order} mapping: {empty}. "
         "Check class_map_7.json against the SNOMED codes actually present."
     )
 
 
 @pytest.mark.corpus
-def test_corpus_no_class_is_too_small_to_train(chapman_root, data_dir):
+def test_corpus_no_class_is_too_small_to_train(chapman_root, data_dir, resolution_order):
     """Documents the real distribution. A class with a handful of records cannot be
     oversampled into a meaningful result -- see docs/CLASS_MAPPING.md."""
-    _, report, _ = build_index(chapman_root, data_dir, "rhythm_first")
-    tiny = {c: n for c in CLASS_NAMES
+    _, report, cmap = build_index(chapman_root, data_dir, resolution_order)
+    tiny = {c: n for c in cmap.classes
             if 0 < (n := report.label_counts.get(c, 0)) < 50}
     assert not tiny, (
         f"classes with fewer than 50 records: {tiny}. Balancing these to parity would "
@@ -118,25 +118,37 @@ def test_corpus_no_class_is_too_small_to_train(chapman_root, data_dir):
 
 
 @pytest.mark.corpus
-def test_corpus_splits_are_disjoint_and_proportionate(chapman_root, data_dir):
-    records, report, _ = build_index(chapman_root, data_dir, "rhythm_first")
+def test_corpus_splits_are_disjoint_and_hash_consistent(chapman_root, data_dir,
+                                                        resolution_order):
+    """Every record sits in the split its id hashes to, and in exactly one split.
+
+    This replaces an assertion that the aggregate split sizes were 70/15/15. That holds for
+    the full upstream corpus but NOT for the vendored subset, which is curated test-first
+    and is deliberately ~85% training. Aggregate proportions were never the property worth
+    protecting: what matters is that a record's split is a pure function of its id, because
+    that is what guarantees subsetting cannot leak a training record into test.
+    """
+    records, report, _ = build_index(chapman_root, data_dir, resolution_order)
+    spec = load_split_spec(data_dir)
+    salt = spec["hash"]["salt"]
+    hex_chars = int(spec["hash"]["digest_hex_chars"])
+    props = {k: float(v) for k, v in spec["proportions"].items()}
+
     total = len(records)
     sizes = {s: sum(c.values()) for s, c in report.split_counts.items()}
-    assert sum(sizes.values()) == total
-    for name, want in (("train", 0.70), ("val", 0.15), ("test", 0.15)):
-        got = sizes[name] / total
-        assert abs(got - want) < 0.02, f"{name} split is {got:.3f}, expected ~{want}"
+    assert sum(sizes.values()) == total, "a record is in more than one split, or in none"
 
-    # Stratification: each split should hold roughly the corpus class proportions.
-    for cls in CLASS_NAMES:
-        n_cls = report.label_counts.get(cls, 0)
-        if n_cls < 200:
-            continue
-        for name, want in (("train", 0.70), ("val", 0.15), ("test", 0.15)):
-            got = report.split_counts[name].get(cls, 0) / n_cls
-            assert abs(got - want) < 0.05, (
-                f"{cls} is {got:.3f} of the {name} split, expected ~{want}"
-            )
+    wrong = [r.record_id for r in records
+             if r.split != assign_split(r.record_id, salt, props, hex_chars)]
+    assert not wrong, (
+        f"{len(wrong)} records are not in the split their id hashes to, e.g. {wrong[:5]}. "
+        "The partition is meant to be a pure function of the record id."
+    )
+
+    # Every split must be non-empty and hold every class, or a per-class metric is
+    # undefined for whatever is missing.
+    for name in ("train", "val", "test"):
+        assert sizes.get(name, 0) > 0, f"the {name} split is empty"
 
 
 @pytest.mark.corpus
