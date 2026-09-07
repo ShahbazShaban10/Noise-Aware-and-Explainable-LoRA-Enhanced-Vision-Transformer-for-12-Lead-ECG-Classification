@@ -1,0 +1,78 @@
+# ---------------------------------------------------------------------------
+# Patient data must never enter this repository.
+# The ECG corpus is open access and fetched by link; see
+# tasks/**/environment/data/README.md.
+# ---------------------------------------------------------------------------
+*.mat
+*.hea
+*.dat
+*.edf
+*.xyz
+WFDB*/
+
+# EXCEPTION: the checksum-pinned corpus subset IS committed. The task runs with
+# no network, so environment/data/corpus/ is the only source of recordings and
+# must travel with the repository. It is a subset of an open-access, de-identified
+# research corpus (CC-BY-4.0); see environment/data/README.md for provenance and
+# environment/data/corpus/manifest.sha256 for the integrity record.
+!**/environment/data/corpus/
+!**/environment/data/corpus/**/*.mat
+!**/environment/data/corpus/**/*.hea
+
+# Generated test fixtures (the generator and its manifest ARE committed)
+tests/fixtures/corpus/
+**/tests/fixtures/corpus/
+
+# Run artefacts
+outputs/
+**/outputs/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npz
+cache/
+**/cache/
+mlruns/
+wandb/
+
+# Figures produced by a run (the code that makes them is committed)
+**/figures/*.png
+**/figures/**/*.png
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+# Notebooks are committed WITHOUT outputs (see notebooks/README.md); these are run copies.
+*.nbconvert.ipynb
+**/notebooks/*.out.ipynb
+.tox/
+
+# Editors / OS
+# The shared VS Code config IS committed (test discovery, run configurations, recommended
+# extensions); anything else under .vscode/ is per-machine and is not.
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
