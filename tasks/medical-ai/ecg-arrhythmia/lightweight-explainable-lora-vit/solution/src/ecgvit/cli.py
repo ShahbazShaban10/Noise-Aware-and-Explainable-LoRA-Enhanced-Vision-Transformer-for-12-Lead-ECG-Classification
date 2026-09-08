@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import sys
+import tempfile
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -481,7 +482,15 @@ def _build_loaders(cfg: PipelineConfig, balance_train: bool = True, cv_fold=None
 
     by_split = split_records(records)
     spec = load_split_spec(data_dir)
-    cache = cfg.output_dir / "cache"
+    # The preprocessing cache is derived data -- about 1.6 GB of .npy for this corpus -- and
+    # it must NOT sit under output_dir. task.toml declares artifacts = ["/app/outputs"], so
+    # Harbor copies that directory out of the container after every trial; with the cache
+    # inside it, a trial that trained and evaluated perfectly can still fail during
+    # collection with "there is not enough space on the disk", half an hour after the work
+    # succeeded. $ECGVIT_CACHE_DIR overrides; the default is the platform temp directory,
+    # which is writable, shared across the five CLI invocations of one solve.sh run, and
+    # collected by nobody.
+    cache = Path(os.environ.get("ECGVIT_CACHE_DIR") or Path(tempfile.gettempdir()) / "ecgvit-cache")
 
     _write_preprocessing_report(cfg, records)
 
