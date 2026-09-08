@@ -1,13 +1,52 @@
-# Build and run the task environment with GPU passthrough.
+# Build and run the task environment in Docker.
 #
 #   docker compose build
 #   docker compose run --rm solve      # reference pipeline end to end
 #   docker compose run --rm verify     # grade whatever is in outputs/
+#   docker compose run --rm test       # unit tier only, no GPU, no prior run needed
 #   docker compose run --rm shell      # interactive
 #
-# On Windows this needs Docker Desktop with WSL2 integration and the NVIDIA Container
-# Toolkit. Confirm the GPU reaches a container first:
+# GPU passthrough lives in docker-compose.gpu.yml, which `.env` selects by default through
+# COMPOSE_FILE. Nothing in THIS file requests a device, so every service here also starts on
+# a host with no NVIDIA Container Toolkit. That split is deliberate: the previous version
+# put the reservation on the shared anchor, so `verify`, `test` and `shell` -- none of which
+# needs a GPU -- failed to start at all on such a host, with a Docker error about device
+# drivers rather than anything to do with this project.
+#
+# On Windows the GPU path needs Docker Desktop with WSL2 integration and the NVIDIA
+# Container Toolkit. Confirm the GPU reaches a container first:
 #   docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi
+#
+# CPU-only host, or no toolkit? Use the CPU image and skip the GPU overlay:
+#   docker compose --env-file .env.cpu -f docker-compose.yml build
+#   docker compose --env-file .env.cpu -f docker-compose.yml run --rm test
+# or `make build-cpu` / `make test-cpu`. Training on CPU takes hours and is a wiring check,
+# not a result.
+#
+# Every value below comes from `.env` (or `.env.cpu`), so the schedule, the device and the
+# corpus can be changed without editing this file:
+#   CHAPMAN_HOST_DIR=/mnt/d/WFDB_ChapmanShaoxing SMOKE=1 docker compose run --rm solve
+
+name: ecgvit
+
+# Mirrors task.toml's [environment.env] plus the knobs [solution.env] declares. Kept in one
+# place so solve, verify, test and shell cannot drift apart -- which is exactly how solve.sh
+# and scripts/run_local.* once disagreed about the resolution order.
+x-env: &env
+  DATA_DIR: /app/data
+  OUTPUT_DIR: /app/outputs
+  # Unchanged from task.toml even when a host corpus is mounted: the mount lands ON this
+  # path, so the container's view matches the graded contract either way.
+  CHAPMAN_ROOT: /app/data/corpus
+  PYTHONHASHSEED: "0"
+  MPLBACKEND: Agg
+  RESOLUTION_ORDER: ${RESOLUTION_ORDER:-canonical_v2}
+  DEVICE: ${DEVICE:-auto}
+  ALLOW_CPU: ${ALLOW_CPU:-0}
+  PRETRAIN_EPOCHS: ${PRETRAIN_EPOCHS:-40}
+  LORA_EPOCHS: ${LORA_EPOCHS:-15}
+  BATCH_SIZE: ${BATCH_SIZE:-64}
+  SMOKE: ${SMOKE:-0}
 
 services:
   base: &base
@@ -16,39 +55,65 @@ services:
       # (docker-compose-build.yaml + CONTEXT_DIR), and the Dockerfile's COPY paths are
       # relative to it. Building from the task directory would fail on every COPY.
       context: ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/environment
-    image: ecgvit:1.0.0
+      args:
+        # Defaults reproduce the graded CUDA image. .env.cpu overrides all three.
+        BASE_IMAGE: ${BASE_IMAGE:-nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04}
+        ACCELERATOR: ${ACCELERATOR:-gpu}
+        TORCH_REQUIREMENTS: ${TORCH_REQUIREMENTS:-requirements-cu128.txt}
+    image: ${ECGVIT_IMAGE:-ecgvit:1.0.0}
     # See environment/docker-compose.yaml: 64 MB of /dev/shm kills DataLoader workers.
     shm_size: '2gb'
     working_dir: /app
-    environment:
-      DATA_DIR: /app/data
-      OUTPUT_DIR: /app/outputs
-      CHAPMAN_ROOT: /app/data/corpus
-      PYTHONHASHSEED: "0"
-      MPLBACKEND: Agg
+    # Installs the reference package from the mounted /solution when it is not already
+    # importable. The image itself must not contain it -- see scripts/docker/entrypoint.sh
+    # for why, and why verify could not otherwise run without a preceding solve.
+    entrypoint: ["bash", "/entrypoint/entrypoint.sh"]
+    environment: *env
     volumes:
+      # The corpus. Defaults to the checksum-pinned subset vendored in the image, so the
+      # default run is the graded one; point CHAPMAN_HOST_DIR at a full PhysioNet
+      # WFDBRecords tree to run the manuscript's schedule over the whole database. Read-only,
+      # because the corpus is an input -- the image marks it a-w for the same reason.
+      - ${CHAPMAN_HOST_DIR:-./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/environment/data/corpus}:/app/data/corpus:ro
       - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/outputs:/app/outputs
+      # Harbor uploads solution/ at run time and the verifier inherits the container the
+      # agent installed it in. A compose `run --rm` starts a fresh container each time, so
+      # the mount is what lets the entrypoint reinstall. Nothing under /tests reads it.
       - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/solution:/solution:ro
       - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/tests:/tests:ro
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      - ./scripts/docker:/entrypoint:ro
+      - ./logs/verifier:/logs/verifier
 
   solve:
     <<: *base
+    environment:
+      <<: *env
+      # solve.sh installs the package itself as its first step; letting the entrypoint do it
+      # too would install the same wheel twice.
+      ECGVIT_AUTO_INSTALL: "0"
     command: ["bash", "/solution/solve.sh"]
 
   verify:
     <<: *base
-    volumes:
-      - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/outputs:/app/outputs
-      - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/tests:/tests:ro
-      - ./logs/verifier:/logs/verifier
     command: ["bash", "/tests/test.sh"]
+
+  # The unit tier on its own: no corpus records, no artefacts from a previous run, no GPU.
+  # This is the check that should pass on any machine, and the fastest signal that the image
+  # and the package are sound. `verify` grades a completed run and needs one to have
+  # happened; this does not.
+  test:
+    <<: *base
+    command:
+      - python
+      - -m
+      - pytest
+      - /tests
+      - -rA
+      - -p
+      - no:cacheprovider
+      - --timeout=900
+      - -m
+      - not corpus and not artifacts
 
   shell:
     <<: *base

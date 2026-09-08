@@ -16,7 +16,22 @@ manifest.sha256 -text
 # "bad interpreter: /bin/bash^M" -- a confusing way to lose an hour.
 *.sh            text eol=lf
 
+# Recipe lines are handed to /bin/sh. With CRLF, make passes `docker compose build\r` and
+# the shell reports a command it cannot find, naming a command that looks correct.
+Makefile        text eol=lf
+
 # Read by the Linux Docker daemon, not by an editor on the host.
 Dockerfile      text eol=lf
 *.yaml          text eol=lf
 *.yml           text eol=lf
+.dockerignore   text eol=lf
+
+# Read by pip inside the container. A trailing CR turns `torch==2.8.0` into a version
+# specifier pip cannot parse.
+requirements*.txt text eol=lf
+
+# Read by Docker Compose on the host. Compose does not strip a trailing CR from a value, so
+# CRLF here makes COMPOSE_FILE name a file called "docker-compose.gpu.yml\r" and the GPU
+# overlay silently stops being applied -- on Windows, which is where the CRLF came from.
+.env            text eol=lf
+.env.*          text eol=lf

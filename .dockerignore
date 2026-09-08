@@ -1,3 +1,11 @@
+# Exclusions for a build whose context is the REPOSITORY ROOT.
+#
+# No build in this repository uses that context today. The image is built from
+# tasks/**/environment/, and Docker reads `<context>/.dockerignore`, so the rules that
+# actually shape the image live in tasks/**/environment/.dockerignore. This file is kept so
+# that an ad-hoc `docker build .` from the root does not upload 800 MB of corpus and
+# checkpoints, and it is the wrong place to add rules meant for the environment image.
+
 .git
 .github
 .vscode
@@ -8,11 +16,11 @@
 **/.venv
 **/venv
 **/outputs
+**/outputs_*
 **/cache
 **/*.pt
 **/*.pth
+**/*.ckpt
 **/*.npz
-scripts
-docker
-*.md
-!tasks/**/environment/data/README.md
+logs
+jobs

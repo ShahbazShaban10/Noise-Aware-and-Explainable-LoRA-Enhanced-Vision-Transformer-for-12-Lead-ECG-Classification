@@ -10,9 +10,12 @@ is the reference implementation.
 ├── solution_explanation.md   how an expert approaches the task, and why
 ├── VALIDATION.md             transcripts of the two required checks
 ├── DECLARATION.md            authorship statement
-├── docker-compose.yml        build / solve / verify / shell, with GPU passthrough
-├── Makefile                  the same, as named targets
+├── docker-compose.yml        build / solve / verify / test / shell — runs anywhere
+├── docker-compose.gpu.yml    GPU passthrough overlay, on by default via .env
+├── .env / .env.cpu           GPU defaults / CPU-only overrides
+├── Makefile                  the same, as named targets (plus *-cpu variants)
 ├── scripts/
+│   ├── docker/entrypoint.sh  installs the reference package into the container
 │   ├── run_local.ps1         full pipeline on Windows + CUDA, no Docker
 │   ├── run_local.sh          same, on Linux
 │   └── checks.sh             harbor nop + oracle, transcripts captured to logs/
@@ -20,7 +23,8 @@ is the reference implementation.
     ├── instruction.md        the task as the agent sees it
     ├── task.toml             environment contract, timeouts, artefacts
     ├── environment/
-    │   ├── Dockerfile        CUDA 12.8, every version pinned
+    │   ├── Dockerfile        CUDA 12.8 by default, every version pinned
+    │   ├── requirements-cu128.txt / requirements-cpu.txt  the two torch builds
     │   ├── docker-compose.yaml  GPU attachment (Harbor's Docker provider has none)
     │   └── data/             SNOMED vocabulary, class map, split spec, corpus
     ├── solution/
@@ -40,18 +44,56 @@ Docker is the reproducible path:
 
 ```bash
 docker compose build
+docker compose run --rm test       # unit tier — no GPU, no prior run needed
 docker compose run --rm solve      # reference pipeline end to end
 docker compose run --rm verify     # grade whatever is in outputs/
+docker compose run --rm shell      # interactive
 ```
 
-On Windows this needs Docker Desktop with WSL2 integration and the NVIDIA Container Toolkit.
-Check the GPU reaches a container before anything else:
+`make test`, `make solve`, `make verify`, `make shell` are the same commands as named
+targets, and `make smoke` is a 2 + 1-epoch wiring check.
+
+Start with `test`. It runs the unit tier alone — no corpus records, no artefacts from a
+previous run, no GPU — so it is the fastest proof that the image and the package are sound,
+and it is the one check that passes on any machine. `verify` grades a completed run and
+needs one to have happened.
+
+`solve` needs a GPU. On Windows that means Docker Desktop with WSL2 integration and the
+NVIDIA Container Toolkit; check the GPU reaches a container before anything else:
 
 ```bash
-docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi
+docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi   # or: make gpu-check
 ```
 
-If that does not print your GPU, the problem is Docker, not this repository.
+If that does not print your GPU, the problem is Docker, not this repository. Only `solve`,
+`verify` and `shell` request a device — `test` and `build` do not, so they still work while
+you sort the toolkit out.
+
+### Running against the full corpus
+
+The default run uses the checksum-pinned subset vendored in the image, which is the graded
+corpus. Point `CHAPMAN_HOST_DIR` at a full PhysioNet `WFDBRecords` tree to run over the
+whole database; it is bind-mounted read-only onto the same `/app/data/corpus`, so
+`CHAPMAN_ROOT` stays exactly what `task.toml` declares:
+
+```bash
+CHAPMAN_HOST_DIR=/mnt/d/WFDB_ChapmanShaoxing docker compose run --rm solve
+```
+
+Every other knob works the same way — `SMOKE`, `PRETRAIN_EPOCHS`, `LORA_EPOCHS`,
+`BATCH_SIZE`, `DEVICE`, `RESOLUTION_ORDER`. The defaults live in `.env`.
+
+### On a machine with no NVIDIA GPU
+
+There is a CPU-only image. Same code, same `torch==2.8.0` pin, CPU kernels, a separate tag
+(`ecgvit:1.0.0-cpu`) so it cannot be confused with the graded one:
+
+```bash
+make build-cpu && make test-cpu     # or the full docker compose --env-file .env.cpu form
+```
+
+This is a wiring check, not a result. Training on CPU takes hours and its metrics are not
+the manuscript's — which is why `.env.cpu` sets `SMOKE=1`.
 
 ### Without Docker
 
@@ -105,8 +147,14 @@ RTX 50-series is `sm_120`, and wheels built against CUDA ≤ 12.6 contain no ker
 The task runs with `network_mode = "no-network"`: every input is baked into the image, so
 nothing can drift under it between runs.
 
-Two things about this environment are not obvious, and both were found by reading Harbor's
-source rather than its documentation.
+The same Dockerfile also builds the CPU image, through three build arguments — `BASE_IMAGE`,
+`ACCELERATOR`, `TORCH_REQUIREMENTS` — whose defaults reproduce the graded CUDA image exactly.
+Harbor passes no build arguments, so the contract build is unchanged; `.env.cpu` overrides
+all three. A second Dockerfile would have been the obvious alternative and the wrong one: the
+two would have drifted at the first dependency bump.
+
+Three things about this environment are not obvious. The first two were found by reading
+Harbor's source rather than its documentation.
 
 *The build context is `environment/`, not the task directory.* Harbor points the compose
 build context at the environment directory, so every `COPY` in the Dockerfile is relative
@@ -127,6 +175,23 @@ Only the cloud providers set `gpus=True`, and none is reachable under `no-networ
 Harbor merges after its own build override. `solution/solve.sh` then fails the run outright
 if no CUDA device is visible, so a host missing the NVIDIA Container Toolkit says so in
 seconds instead of spending an hour training on CPU.
+
+*The environment image must not contain `solution/` or `tests/`, and that is why the
+container needs an entrypoint.* Baking either one in would hand the reference implementation
+to every agent, including the do-nothing agent, which would then score above zero. Under
+Harbor this costs nothing: it uploads `solution/` at run time for the oracle agent only, and
+the verifier inherits the same container the agent installed the package into. A local
+`docker compose run --rm verify` gets a fresh container instead, so nothing had ever
+installed `ecgvit` and `test.sh` failed its own precondition — `no importable package named
+'ecgvit'`, which reads like a broken submission and is really a missing install.
+`scripts/docker/entrypoint.sh` installs it from the mounted read-only `/solution` when it is
+not already importable, in the container's writable layer that `--rm` discards. The image on
+disk stays clean.
+
+One smaller trap, worth knowing before adding rules: Docker reads `<context>/.dockerignore`,
+and the build context is `environment/`. The exclusions that actually shape the image are in
+`environment/.dockerignore`; the one at the repository root only covers an ad-hoc
+`docker build .`.
 
 ## Data
 

@@ -14,8 +14,22 @@
 # consumed by docker-compose-build.yaml), so every COPY path below is relative to
 # environment/. Build it by hand the same way:
 #   docker build -t ecgvit:1.0.0 environment/
+#
+# The three build arguments below exist so the same file can also produce a CPU-only image
+# for machines with no NVIDIA hardware. Their defaults reproduce the graded CUDA image
+# exactly, and Harbor passes no build arguments at all, so the contract build is unchanged:
+#   docker build -t ecgvit:1.0.0-cpu \
+#     --build-arg BASE_IMAGE=ubuntu:22.04 \
+#     --build-arg ACCELERATOR=cpu \
+#     --build-arg TORCH_REQUIREMENTS=requirements-cpu.txt \
+#     environment/
 
-FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
+ARG BASE_IMAGE=nvidia/cuda:12.8.1-cudnn-runtime-ubuntu22.04
+FROM ${BASE_IMAGE}
+
+# Redeclared after FROM: an ARG before the first FROM is visible only to FROM itself.
+ARG ACCELERATOR=gpu
+ARG TORCH_REQUIREMENTS=requirements-cu128.txt
 
 LABEL org.opencontainers.image.title="ecgvit"
 LABEL org.opencontainers.image.version="1.0.0"
@@ -59,8 +73,11 @@ WORKDIR /app
 # COPY sources are relative to environment/. A path like `environment/requirements.txt`
 # or `instruction.md` resolves outside the build context and fails the build under
 # Harbor, even though it works with a hand-rolled `docker build -f ... <task dir>`.
-COPY requirements-cu128.txt /tmp/requirements-cu128.txt
-RUN python -m pip install -r /tmp/requirements-cu128.txt
+# Both torch requirement files are copied so the build argument alone selects between them;
+# copying one file the build does not read costs a few hundred bytes and keeps the CUDA and
+# CPU images sharing every layer up to this point.
+COPY requirements-cu128.txt requirements-cpu.txt /tmp/
+RUN python -m pip install -r "/tmp/${TORCH_REQUIREMENTS}"
 
 COPY requirements.txt /tmp/requirements.txt
 RUN python -m pip install -r /tmp/requirements.txt
@@ -74,23 +91,37 @@ RUN python -m pip install -r /tmp/requirements.txt
 # cu128 wheel from the default PyPI one that carries no sm_120 kernels. The arch list
 # itself is verified at RUN time by solution/solve.sh, where a GPU is attached and the
 # check means something.
-RUN python - <<'TORCHCHECK'
+#
+# ACCELERATOR=cpu skips the CUDA assertions rather than weakening them: on that path a
+# torch with no CUDA build is the intended outcome, not the failure this check exists to
+# catch. The default is gpu, so the graded image is checked exactly as before.
+RUN ACCELERATOR="${ACCELERATOR}" python - <<'TORCHCHECK'
+import os
 import torch
-print("torch", torch.__version__, "| CUDA build", torch.version.cuda)
-assert torch.version.cuda is not None, (
-    "a CPU-only torch wheel is installed; requirements-cu128.txt must be installed "
-    "from the cu128 index"
-)
-major, minor = (int(x) for x in torch.version.cuda.split(".")[:2])
-assert (major, minor) >= (12, 8), (
-    f"torch is built against CUDA {torch.version.cuda}; Blackwell (sm_120) needs 12.8 "
-    "or newer. Check the --index-url in environment/requirements-cu128.txt"
-)
-try:                      # informational: populated only when a device is visible
-    print("arch flags:", torch._C._cuda_getArchFlags())
-except Exception as exc:
-    print(f"arch flags unavailable at build time ({type(exc).__name__}); "
-          "solve.sh verifies them at run time")
+accelerator = os.environ.get("ACCELERATOR", "gpu")
+print("torch", torch.__version__, "| CUDA build", torch.version.cuda,
+      "| target", accelerator)
+if accelerator != "gpu":
+    assert torch.version.cuda is None, (
+        f"ACCELERATOR={accelerator} asked for a CPU image but torch is built against CUDA "
+        f"{torch.version.cuda}; check the --index-url in the selected requirements file"
+    )
+    print("CPU image: skipping the sm_120 kernel check.")
+else:
+    assert torch.version.cuda is not None, (
+        "a CPU-only torch wheel is installed; requirements-cu128.txt must be installed "
+        "from the cu128 index"
+    )
+    major, minor = (int(x) for x in torch.version.cuda.split(".")[:2])
+    assert (major, minor) >= (12, 8), (
+        f"torch is built against CUDA {torch.version.cuda}; Blackwell (sm_120) needs 12.8 "
+        "or newer. Check the --index-url in environment/requirements-cu128.txt"
+    )
+    try:                  # informational: populated only when a device is visible
+        print("arch flags:", torch._C._cuda_getArchFlags())
+    except Exception as exc:
+        print(f"arch flags unavailable at build time ({type(exc).__name__}); "
+              "solve.sh verifies them at run time")
 TORCHCHECK
 
 # --- Task inputs ------------------------------------------------------------
