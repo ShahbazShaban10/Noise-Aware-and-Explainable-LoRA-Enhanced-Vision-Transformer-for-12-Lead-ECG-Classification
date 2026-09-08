@@ -40,6 +40,18 @@ is the reference implementation.
         └── test_*.py         219 tests
 ```
 
+## Results
+
+[`RESULTS.md`](RESULTS.md) carries the test-split metrics, the per-class classification
+report and the confusion matrix of a graded run, generated from that run's own artefacts by
+`scripts/report.py`. Headline: balanced accuracy **0.7438**, macro F1 **0.7433**, macro AUC
+**0.9507**, with **92.05%** fewer trainable parameters than full fine-tuning.
+
+Reviewers: expect to land *near* those numbers, not on them — cuDNN kernel selection is not
+pinned, so results vary with GPU and driver. The check is the thresholds in `tests/`, and
+`docker compose run --rm verify` writing `1` to `logs/verifier/reward.txt` is the
+confirmation. `RESULTS.md` sets this out in full.
+
 ## Quick start
 
 Docker is the reproducible path:
