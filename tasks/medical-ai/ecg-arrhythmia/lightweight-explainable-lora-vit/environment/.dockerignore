@@ -1,0 +1,37 @@
+# Exclusions for the image build.
+#
+# This file has to live HERE, beside the Dockerfile, not at the repository root. Docker
+# reads `<context>/.dockerignore`, and the build context is environment/ -- Harbor sets it
+# that way and docker-compose.yml matches. The root .dockerignore is never consulted for
+# this build, which is why its `*.md` rule needed an exception for data/README.md that could
+# never have applied.
+#
+# Paths are relative to environment/.
+
+# Python build residue that must never reach the image
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ipynb_checkpoints
+**/.venv
+**/venv
+
+# Run output. Nothing here is an input, and outputs/ in particular can be gigabytes of
+# checkpoints that would be copied into the context on every build.
+outputs
+outputs_*
+cache
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.npz
+
+# Editor and OS noise
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# data/README.md is deliberately NOT excluded: it is the provenance record for the vendored
+# corpus and travels with the data it describes.
