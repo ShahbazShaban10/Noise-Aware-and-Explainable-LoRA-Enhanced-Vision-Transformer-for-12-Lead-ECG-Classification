@@ -7,6 +7,7 @@ is the reference implementation.
 
 ```
 .
+├── RESULTS.md                test-split metrics and confusion matrix of a graded run
 ├── solution_explanation.md   how an expert approaches the task, and why
 ├── VALIDATION.md             transcripts of the two required checks
 ├── DECLARATION.md            authorship statement
@@ -15,6 +16,7 @@ is the reference implementation.
 ├── .env / .env.cpu           GPU defaults / CPU-only overrides
 ├── Makefile                  the same, as named targets (plus *-cpu variants)
 ├── scripts/
+│   ├── report.py             regenerates RESULTS.md from a run's artefacts
 │   ├── docker/entrypoint.sh  installs the reference package into the container
 │   ├── run_local.ps1         full pipeline on Windows + CUDA, no Docker
 │   ├── run_local.sh          same, on Linux
