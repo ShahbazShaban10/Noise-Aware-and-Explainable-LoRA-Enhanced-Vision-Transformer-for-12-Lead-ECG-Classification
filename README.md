@@ -152,7 +152,7 @@ Built to the reference architecture this is **1,648,839** backbone parameters an
 
 ## Environment
 
-Everything is pinned: a CUDA 12.8.1 / cuDNN base image, Python 3.10 — Ubuntu 22.04's own
+Everything is pinned: a CUDA 12.8.1 / cuDNN base image, Python 3.10, Ubuntu 22.04's own
 interpreter, from main and thirteen exact
 Python versions including `torch==2.8.0` from the cu128 index. The image build fails rather
 than ships if the installed torch has no kernels for the target GPU architecture the
