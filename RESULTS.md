@@ -75,7 +75,7 @@ LoRA rank 8, alpha 16, applied to `qkv`, `proj`, `fc1`, `fc2` across 32 layers.
 
 ## Reproducing this
 
-Needs Docker and a CUDA GPU. Everything else — corpus, class map, split spec — is
+Needs Docker and a CUDA GPU. Everything else corpus, class map, split spec is
 baked into the image, and the container runs with no network.
 
 ```bash
@@ -94,7 +94,7 @@ from the checkpoint rather than trusting `metrics.json`.
 
 **Expect these numbers to be close, not identical.** `set_seed()` seeds Python,
 NumPy and torch (seed 42), and the split is derived deterministically from
-`splits/split_spec.yaml` — so the data a reviewer trains on is exactly the data
+`splits/split_spec.yaml` so the data a reviewer trains on is exactly the data
 used here. What is *not* pinned is cuDNN's kernel selection: `cudnn.deterministic`
 is left unset and `cudnn.benchmark` unrestricted, so cuDNN chooses algorithms by
 heuristic, and that choice varies with GPU model, driver version and cuDNN version.
