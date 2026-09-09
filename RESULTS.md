@@ -1,7 +1,7 @@
 # Results
 
 Test-split performance of the LoRA-adapted model, generated from the run's own
-artefacts by `scripts/report.py` — not transcribed by hand. Regenerate after any
+artefacts by `scripts/report.py` not transcribed by hand. Regenerate after any
 run with `python scripts/report.py`.
 
 > Research artefact only. Not a medical device, not validated for clinical use,
