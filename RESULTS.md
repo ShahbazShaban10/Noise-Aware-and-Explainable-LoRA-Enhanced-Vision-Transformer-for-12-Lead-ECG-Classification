@@ -45,7 +45,7 @@ as support shrinks, which is the point of reporting them per class.
 | CD | 0.7317 | 0.5455 | 0.6250 | 0.8887 | 110 | 0.452–0.635 |
 | VE ⚠️ | 0.5333 | 0.5000 | 0.5161 | 0.8811 | 32 | 0.336–0.664 |
 
-⚠️ **VE is flagged `evaluable: false`** — its test support is too small for the interval to be meaningful. It is reported, and it is included in the macro averages, but a per-class claim about it is not supported by this many records.
+⚠️ **VE is flagged `evaluable: false`** its test support is too small for the interval to be meaningful. It is reported, and it is included in the macro averages, but a per-class claim about it is not supported by this many records.
 
 ## Confusion matrix
 
@@ -118,7 +118,7 @@ confirmation. It passes all three tiers on the run reported above.
 
 A reviewer needs an NVIDIA GPU whose architecture is covered by the cu128 wheel.
 Without one, `make test-cpu` still runs the unit tier anywhere, and `make solve-cpu`
-will train on CPU — in hours rather than minutes, which is a wiring check and not a
+will train on CPU in hours rather than minutes, which is a wiring check and not a
 result.
 
 ## Other artefacts
