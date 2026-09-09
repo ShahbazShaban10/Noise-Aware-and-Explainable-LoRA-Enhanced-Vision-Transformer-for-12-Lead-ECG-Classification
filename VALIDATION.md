@@ -3,7 +3,7 @@
 Terminal output of the two required local runs.
 
 > **This file is a template. Nothing below has been filled in.** Both transcripts must be
-> pasted verbatim from runs on your own machine — including the `mean` line from each, and
+> pasted verbatim from runs on your own machine including the `mean` line from each, and
 > including the run's date, host and GPU. Do not summarise them, do not retype them, and do
 > not fill them in before the runs have actually produced those numbers.
 >
@@ -24,7 +24,7 @@ Terminal output of the two required local runs.
 
 ## Check 1 — NOP
 
-Proves the tests are real: a do-nothing agent must score zero. Run this one first — it is
+Proves the tests are real: a do-nothing agent must score zero. Run this one first it is
 fast, needs no GPU time, and fails for structural reasons that would waste an Oracle run.
 
 ```
