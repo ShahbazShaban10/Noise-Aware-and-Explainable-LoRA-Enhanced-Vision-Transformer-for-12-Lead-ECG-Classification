@@ -80,7 +80,7 @@ docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi   # or
 ```
 
 If that does not print your GPU, the problem is Docker, not this repository. Only `solve`,
-`verify` and `shell` request a device — `test` and `build` do not, so they still work while
+`verify` and `shell` request a device `test` and `build` do not, so they still work while
 you sort the toolkit out.
 
 ### Running against the full corpus
