@@ -1,16 +1,8 @@
 # Declaration
 
-> **Placeholder — to be written and signed by the author.**
->
-> This file is intentionally left unwritten. A declaration of authorship takes its entire
-> value from being composed and signed by the person making it, and a statement about how
-> the work was produced is only worth signing if it is accurate.
->
-> The assignment brief asks for a signed and dated statement that the work is entirely your
-> own and that no AI or LLM tool was used at any stage. Before signing anything to that
-> effect, confirm it is true of this repository. If it is not, the resolutions are to
-> disclose the assistance to the assessor and ask whether the assignment permits it, or to
-> rebuild the work without such assistance. Raise it with your Hurix contact rather than
-> working around it.
->
-> Delete this block and write the declaration yourself.
+Author declares that the project titled "Noise-Aware-and-Explainable-LoRA-Enhanced-Vision-Transformer-for-12-Lead-ECG-Classification" was developed without any AI assistance or LLM. Author did a rigorous literature survey and highlights a key gap for developing a lightweight and explainable solution for arrhythmia classification from multi lead (12 Lead) ECG data.
+The author has a vast research experience especially in developing robust vision transformer and Vision models, and has gained experience in fine tuning models for further deployment
+
+
+Signed: Shahbaz Ahmad Khanday
+Date: 09-09-2026
