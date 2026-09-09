@@ -94,7 +94,7 @@ whole database; it is bind-mounted read-only onto the same `/app/data/corpus`, s
 CHAPMAN_HOST_DIR=/mnt/d/WFDB_ChapmanShaoxing docker compose run --rm solve
 ```
 
-Every other knob works the same way — `SMOKE`, `PRETRAIN_EPOCHS`, `LORA_EPOCHS`,
+Every other knob works the same way `SMOKE`, `PRETRAIN_EPOCHS`, `LORA_EPOCHS`,
 `BATCH_SIZE`, `DEVICE`, `RESOLUTION_ORDER`. The defaults live in `.env`.
 
 ### On a machine with no NVIDIA GPU
