@@ -47,7 +47,7 @@ report and the confusion matrix of a graded run, generated from that run's own a
 `scripts/report.py`. Headline: balanced accuracy **0.7438**, macro F1 **0.7433**, macro AUC
 **0.9507**, with **92.05%** fewer trainable parameters than full fine-tuning.
 
-Reviewers: expect to land *near* those numbers, not on them — cuDNN kernel selection is not
+Reviewers: expect to land *near* those numbers, not on them cuDNN kernel selection is not
 pinned, so results vary with GPU and driver. The check is the thresholds in `tests/`, and
 `docker compose run --rm verify` writing `1` to `logs/verifier/reward.txt` is the
 confirmation. `RESULTS.md` sets this out in full.
@@ -67,8 +67,8 @@ docker compose run --rm shell      # interactive
 `make test`, `make solve`, `make verify`, `make shell` are the same commands as named
 targets, and `make smoke` is a 2 + 1-epoch wiring check.
 
-Start with `test`. It runs the unit tier alone — no corpus records, no artefacts from a
-previous run, no GPU — so it is the fastest proof that the image and the package are sound,
+Start with `test`. It runs the unit tier alone no corpus records, no artefacts from a
+previous run, no GPU so it is the fastest proof that the image and the package are sound,
 and it is the one check that passes on any machine. `verify` grades a completed run and
 needs one to have happened.
 
@@ -107,7 +107,7 @@ make build-cpu && make test-cpu     # or the full docker compose --env-file .env
 ```
 
 This is a wiring check, not a result. Training on CPU takes hours and its metrics are not
-the manuscript's — which is why `.env.cpu` sets `SMOKE=1`.
+the manuscript's which is why `.env.cpu` sets `SMOKE=1`.
 
 ### Without Docker
 
@@ -131,7 +131,7 @@ design.
 scripts/checks.sh          # or: make checks
 ```
 
-- **NOP must be 0.000.** Proves the tests are real — if doing nothing scores above zero, the
+- **NOP must be 0.000.** Proves the tests are real if doing nothing scores above zero, the
   tests can be passed without doing the work.
 - **Oracle must be 1.000.** Proves the task is solvable and the reference solution passes
   marking in full.
@@ -148,21 +148,21 @@ rank-8 LoRA, then produce Grad-CAM, Integrated Gradients, Gradient SHAP and an
 insertion/deletion faithfulness test, plus McNemar and DeLong against a no-LoRA control.
 
 Built to the reference architecture this is **1,648,839** backbone parameters and
-**131,072** trainable of **1,779,911** total — a 92.05% reduction against full fine-tuning.
+**131,072** trainable of **1,779,911** total a 92.05% reduction against full fine-tuning.
 
 ## Environment
 
 Everything is pinned: a CUDA 12.8.1 / cuDNN base image, Python 3.10 — Ubuntu 22.04's own
-interpreter, from main — and thirteen exact
+interpreter, from main and thirteen exact
 Python versions including `torch==2.8.0` from the cu128 index. The image build fails rather
-than ships if the installed torch has no kernels for the target GPU architecture — the
+than ships if the installed torch has no kernels for the target GPU architecture the
 RTX 50-series is `sm_120`, and wheels built against CUDA ≤ 12.6 contain no kernels for it.
 
 The task runs with `network_mode = "no-network"`: every input is baked into the image, so
 nothing can drift under it between runs.
 
-The same Dockerfile also builds the CPU image, through three build arguments — `BASE_IMAGE`,
-`ACCELERATOR`, `TORCH_REQUIREMENTS` — whose defaults reproduce the graded CUDA image exactly.
+The same Dockerfile also builds the CPU image, through three build arguments `BASE_IMAGE`,
+`ACCELERATOR`, `TORCH_REQUIREMENTS` whose defaults reproduce the graded CUDA image exactly.
 Harbor passes no build arguments, so the contract build is unchanged; `.env.cpu` overrides
 all three. A second Dockerfile would have been the obvious alternative and the wrong one: the
 two would have drifted at the first dependency bump.
@@ -176,7 +176,7 @@ to `environment/` and nothing above it can be copied at all. `docker-compose.yml
 `Makefile` build the same way, so a hand build and a Harbor build cannot diverge.
 
 *Harbor's Docker provider cannot allocate GPUs.* `DockerEnvironment.capabilities` leaves
-`gpus` at its `False` default, so `[environment] gpus = 1` does not request a device — it
+`gpus` at its `False` default, so `[environment] gpus = 1` does not request a device it
 aborts the trial outright, before the container is created:
 
 ```
@@ -196,7 +196,7 @@ to every agent, including the do-nothing agent, which would then score above zer
 Harbor this costs nothing: it uploads `solution/` at run time for the oracle agent only, and
 the verifier inherits the same container the agent installed the package into. A local
 `docker compose run --rm verify` gets a fresh container instead, so nothing had ever
-installed `ecgvit` and `test.sh` failed its own precondition — `no importable package named
+installed `ecgvit` and `test.sh` failed its own precondition `no importable package named
 'ecgvit'`, which reads like a broken submission and is really a missing install.
 `scripts/docker/entrypoint.sh` installs it from the mounted read-only `/solution` when it is
 not already importable, in the container's writable layer that `--rm` discards. The image on
@@ -219,7 +219,7 @@ a second line of defence.
 
 Done:
 
-- The corpus subset is built and committed — 6,873 records, 792 MB, with `manifest.sha256`.
+- The corpus subset is built and committed 6,873 records, 792 MB, with `manifest.sha256`.
 - `BALANCED_ACC_MIN` / `MACRO_F1_MIN` are calibrated from a measured reference run on the
   vendored subset rather than from a published claim.
 
@@ -229,7 +229,7 @@ Outstanding before submission:
 - Write and sign `DECLARATION.md`.
 - Three assertions in `tests/test_artifacts.py` pin exact parameter counts that
   `instruction.md` no longer states. Oracle passes either way, but no other agent could hit
-  an undisclosed integer — convert them to property checks before difficulty testing.
+  an undisclosed integer convert them to property checks before difficulty testing.
 
 ## Licence
 
