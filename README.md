@@ -5,6 +5,8 @@ agent is given `instruction.md`, a corpus and a GPU; it must build a parameter-e
 explainable classifier and emit a fixed set of artefacts. `tests/` grades them. `solution/`
 is the reference implementation.
 
+> **Evaluators need internet access for successful testing:** the Docker build downloads the Chapman-Shaoxing 12-lead ECG dataset (10,247 records, ~1.2 GB) from PhysioNet. Once built, the task itself runs offline.
+
 ```
 .
 ├── RESULTS.md                test-split metrics and confusion matrix of a graded run
