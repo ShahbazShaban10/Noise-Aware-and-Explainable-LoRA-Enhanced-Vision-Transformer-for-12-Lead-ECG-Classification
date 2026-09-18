@@ -10,14 +10,13 @@
 *.xyz
 WFDB*/
 
-# EXCEPTION: the checksum-pinned corpus subset IS committed. The task runs with
-# no network, so environment/data/corpus/ is the only source of recordings and
-# must travel with the repository. It is a subset of an open-access, de-identified
-# research corpus (CC-BY-4.0); see environment/data/README.md for provenance and
-# environment/data/corpus/manifest.sha256 for the integrity record.
-!**/environment/data/corpus/
-!**/environment/data/corpus/**/*.mat
-!**/environment/data/corpus/**/*.hea
+# NO EXCEPTIONS. An earlier revision un-ignored environment/data/corpus/ so the corpus
+# could travel with the repository and satisfy network_mode = "no-network". That put
+# 13,746 signal files and 1,173 MB into git, against this repository's own documented
+# rule (environment/data/README.md: "do not commit it"), and the submission was rejected
+# for exceeding a 500 MB limit. The corpus is now fetched at IMAGE BUILD time by
+# environment/data/fetch_dataset.sh; the container still runs with no network.
+**/environment/data/corpus/
 
 # Generated test fixtures (the generator and its manifest ARE committed)
 tests/fixtures/corpus/

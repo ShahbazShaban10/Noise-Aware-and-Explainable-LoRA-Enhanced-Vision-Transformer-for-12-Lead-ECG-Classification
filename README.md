@@ -83,16 +83,12 @@ If that does not print your GPU, the problem is Docker, not this repository. Onl
 `verify` and `shell` request a device `test` and `build` do not, so they still work while
 you sort the toolkit out.
 
-### Running against the full corpus
+### The corpus
 
-The default run uses the checksum-pinned subset vendored in the image, which is the graded
-corpus. Point `CHAPMAN_HOST_DIR` at a full PhysioNet `WFDBRecords` tree to run over the
-whole database; it is bind-mounted read-only onto the same `/app/data/corpus`, so
-`CHAPMAN_ROOT` stays exactly what `task.toml` declares:
-
-```bash
-CHAPMAN_HOST_DIR=/mnt/d/WFDB_ChapmanShaoxing docker compose run --rm solve
-```
+The image downloads the full Chapman-Shaoxing cohort — 10,247 records, about 1.2 GB — while it
+is being built, and verifies every file against PhysioNet's published checksums before the
+build can finish. `CHAPMAN_ROOT` is `/app/data/corpus` in every service, exactly as
+`task.toml` declares. The corpus is never in the repository; see `environment/data/README.md`.
 
 Every other knob works the same way `SMOKE`, `PRETRAIN_EPOCHS`, `LORA_EPOCHS`,
 `BATCH_SIZE`, `DEVICE`, `RESOLUTION_ORDER`. The defaults live in `.env`.
@@ -159,7 +155,9 @@ than ships if the installed torch has no kernels for the target GPU architecture
 RTX 50-series is `sm_120`, and wheels built against CUDA ≤ 12.6 contain no kernels for it.
 
 The task runs with `network_mode = "no-network"`: every input is baked into the image, so
-nothing can drift under it between runs.
+nothing can drift under it between runs. That includes the corpus, which is downloaded while
+the image is *built* — the build already reaches the network to install torch — not while
+the task runs.
 
 The same Dockerfile also builds the CPU image, through three build arguments `BASE_IMAGE`,
 `ACCELERATOR`, `TORCH_REQUIREMENTS` whose defaults reproduce the graded CUDA image exactly.
@@ -209,21 +207,26 @@ and the build context is `environment/`. The exclusions that actually shape the 
 
 ## Data
 
-The corpus is open access under CC-BY-4.0 (Zheng et al., *Scientific Data* 7:48, 2020). A
-checksum-pinned subset lives in `environment/data/corpus/`; see `environment/data/README.md`
-for provenance and the manifest. No patient-identifiable data is in this repository, and
-`.gitignore` excludes every WFDB signal and header extension outside that vendored subset as
-a second line of defence.
+The corpus is open access under CC-BY-4.0 (Zheng et al., *Scientific Data* 7:48, 2020). It
+is **not** in this repository: `environment/data/fetch_dataset.sh` downloads it from PhysioNet
+during the image build and verifies it against the published checksums. See
+`environment/data/README.md` for provenance. No signal data and no patient-identifiable data
+is in this repository, and `.gitignore` excludes every WFDB signal and header extension, and
+the whole `environment/data/corpus/` directory, as a second line of defence.
 
 ## Status
 
 Done:
 
-- The corpus subset is built and committed 6,873 records, 792 MB, with `manifest.sha256`.
-- `BALANCED_ACC_MIN` / `MACRO_F1_MIN` are calibrated from a measured reference run on the
-  vendored subset rather than from a published claim.
+- The corpus is fetched and checksum-verified at build time; nothing is committed.
+- `BALANCED_ACC_MIN` / `MACRO_F1_MIN` are calibrated from a measured reference run rather
+  than from a published claim.
 
 Outstanding before submission:
+
+- The reference run behind `RESULTS.md` and the pass bars used the earlier 6,873-record
+  subset. The task now uses the full 10,247-record cohort: re-run, regenerate `RESULTS.md`
+  with `scripts/report.py`, and re-check the bars against the new measurement.
 
 - Run both checks and fill in `VALIDATION.md`.
 - Write and sign `DECLARATION.md`.

@@ -16,27 +16,35 @@ this repository contains patient signal data.
 
 ## The dataset
 
-**A large scale 12-lead electrocardiogram database for arrhythmia study** (Chapman University,
-Shaoxing People's Hospital and Ningbo First Hospital), PhysioNet v1.0.0.
+The **Chapman-Shaoxing** cohort — all 10,247 twelve-lead records — as distributed in the
+PhysioNet/CinC Challenge 2021 training data, version 1.0.3.
 
-- Landing page: <https://physionet.org/content/ecg-arrhythmia/1.0.0/>
+- Landing page: <https://physionet.org/content/challenge-2021/1.0.3/>
+- Files: <https://physionet.org/files/challenge-2021/1.0.3/training/chapman_shaoxing/>
 - Licence: Creative Commons Attribution 4.0 International (CC BY 4.0)
-- Citation: Zheng, J., Guo, H. & Chu, H. *A large scale 12-lead electrocardiogram database for
-  arrhythmia study* (version 1.0.0). PhysioNet (2022). RRID:SCR_007345.
 - Original description: Zheng, J. et al. *A 12-lead electrocardiogram database for arrhythmia
   research covering more than 10,000 patients.* Scientific Data 7, 48 (2020).
 
-The full release contains two sub-cohorts. This task uses the **Chapman-Shaoxing** cohort
-(`WFDBRecords`, JS-prefixed records). The manuscript's cross-dataset generalisation experiment
-additionally uses PTB-XL, <https://physionet.org/content/ptb-xl/1.0.3/> — optional here, see
-`dataset.yaml`.
+This is **not** the PhysioNet `ecg-arrhythmia` 1.0.0 release, which earlier revisions of this
+file cited. That release holds 45,152 records because it merges Chapman-Shaoxing with Ningbo,
+and its records are JS-prefixed too, so the two cannot be told apart by name. Training on it
+would silently use a 4.4× larger, different population. The manuscript's cross-dataset
+generalisation experiment additionally uses PTB-XL,
+<https://physionet.org/content/ptb-xl/1.0.3/> — optional here, see `dataset.yaml`.
 
 ## Getting the data
 
+Nothing is needed for the graded run: the Docker image downloads the corpus while it is being
+built (`RUN bash /app/data/fetch_dataset.sh /app/data/corpus`), so it is inside the image
+before the container starts with no network. To fetch it outside Docker:
+
 ```bash
-export CHAPMAN_ROOT=/data/WFDB_ChapmanShaoxing
-bash fetch_dataset.sh            # downloads, unpacks, verifies geometry
+export CHAPMAN_ROOT=/data/chapman_shaoxing
+bash fetch_dataset.sh            # ~1.2 GB; resumes if interrupted
 ```
+
+The script verifies every file against PhysioNet's published `SHA256SUMS.txt`, fails on any
+mismatch, and asserts exactly 10,247 records.
 
 If you already have the corpus (for example a `WFDB_ChapmanShaoxing` folder from an earlier
 project), skip the download and just point at it:
@@ -51,16 +59,17 @@ python -m ecgvit.cli verify-data          # geometry + label sanity check, no tr
 ## Expected layout
 
 `CHAPMAN_ROOT` is scanned recursively for `*.hea`, so both a flat directory and the
-PhysioNet `WFDBRecords/01/010/…` tree work. Each record is a WFDB header plus a MATLAB
-signal file:
+`g1/ … g11/` folders `fetch_dataset.sh` produces work. Each record is a WFDB header plus a
+MATLAB signal file:
 
 ```
 $CHAPMAN_ROOT/
-├── JS00001.hea
-├── JS00001.mat
-├── JS00002.hea
-├── JS00002.mat
-└── …
+├── g1/
+│   ├── JS00001.hea
+│   ├── JS00001.mat
+│   └── …
+├── …
+└── g11/
 ```
 
 A conforming header looks like this (verified against the real corpus):

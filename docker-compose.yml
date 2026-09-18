@@ -23,9 +23,9 @@
 # or `make build-cpu` / `make test-cpu`. Training on CPU takes hours and is a wiring check,
 # not a result.
 #
-# Every value below comes from `.env` (or `.env.cpu`), so the schedule, the device and the
-# corpus can be changed without editing this file:
-#   CHAPMAN_HOST_DIR=/mnt/d/WFDB_ChapmanShaoxing SMOKE=1 docker compose run --rm solve
+# Every value below comes from `.env` (or `.env.cpu`), so the schedule and the device can
+# be changed without editing this file:
+#   SMOKE=1 docker compose run --rm solve
 
 name: ecgvit
 
@@ -70,11 +70,10 @@ services:
     entrypoint: ["bash", "/entrypoint/entrypoint.sh"]
     environment: *env
     volumes:
-      # The corpus. Defaults to the checksum-pinned subset vendored in the image, so the
-      # default run is the graded one; point CHAPMAN_HOST_DIR at a full PhysioNet
-      # WFDBRecords tree to run the manuscript's schedule over the whole database. Read-only,
-      # because the corpus is an input -- the image marks it a-w for the same reason.
-      - ${CHAPMAN_HOST_DIR:-./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/environment/data/corpus}:/app/data/corpus:ro
+      # No corpus mount: the image carries the full cohort at /app/data/corpus, downloaded
+      # at build time. Mounting the repository's environment/data/corpus here would hide it
+      # -- that directory is never committed, so Docker would create it empty and every
+      # service would find zero records.
       - ./tasks/medical-ai/ecg-arrhythmia/lightweight-explainable-lora-vit/outputs:/app/outputs
       # Harbor uploads solution/ at run time and the verifier inherits the container the
       # agent installed it in. A compose `run --rm` starts a fresh container each time, so

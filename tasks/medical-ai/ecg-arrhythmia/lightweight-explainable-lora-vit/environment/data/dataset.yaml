@@ -2,12 +2,17 @@ schema_version: "1.0.0"
 
 primary:
   name: chapman-shaoxing
-  title: A large scale 12-lead electrocardiogram database for arrhythmia study
-  version: "1.0.0"
-  landing_page: https://physionet.org/content/ecg-arrhythmia/1.0.0/
-  zip_url: https://physionet.org/static/published-projects/ecg-arrhythmia/a-large-scale-12-lead-electrocardiogram-database-for-arrhythmia-study-1.0.0.zip
-  rsync_url: physionet.org::published-projects/ecg-arrhythmia/1.0.0/
-  wget_mirror: https://physionet.org/files/ecg-arrhythmia/1.0.0/
+  title: PhysioNet/CinC Challenge 2021 training data -- chapman_shaoxing cohort
+  version: "1.0.3"
+  landing_page: https://physionet.org/content/challenge-2021/1.0.3/
+  wget_mirror: https://physionet.org/files/challenge-2021/1.0.3/training/chapman_shaoxing/
+  checksums_url: https://physionet.org/files/challenge-2021/1.0.3/SHA256SUMS.txt
+  fetch_with: fetch_dataset.sh
+  # NOT physionet.org/content/ecg-arrhythmia/1.0.0/, which earlier revisions of this file
+  # named. That release is 45,152 records because it merges Chapman-Shaoxing WITH Ningbo,
+  # and every record there is JS-prefixed too, so "JS-prefixed" does not isolate the
+  # cohort. This task's 10,247 records are the Challenge 2021 chapman_shaoxing folder;
+  # using the other release would silently train on a 4.4x larger population.
   licence: CC-BY-4.0
   licence_url: https://physionet.org/content/ecg-arrhythmia/view-license/1.0.0/
   citation: >
@@ -16,14 +21,14 @@ primary:
   paper: >
     Zheng, J. et al. A 12-lead electrocardiogram database for arrhythmia research covering
     more than 10,000 patients. Scientific Data 7, 48 (2020).
-  cohort_used: Chapman-Shaoxing (JS-prefixed records), stratified subset -- see vendored_subset
+  cohort_used: Chapman-Shaoxing, all 10,247 records of the cohort
   expected:
-    # These describe the VENDORED SUBSET at environment/data/corpus, which is the corpus
-    # this task actually runs on. min_records is the hard gate: it exists to catch a
-    # mis-set corpus path or a partial copy, so it sits just under the shipped count
-    # rather than at the size of the upstream release.
-    min_records: 1800
-    reference_record_count: 1890
+    # min_records is the hard gate: it catches a mis-set corpus path or a partial
+    # download, so it sits just under the full cohort rather than far below it. The
+    # corpus is fetched at image build time and is never committed -- see fetch_dataset.sh
+    # and environment/data/README.md.
+    min_records: 10200
+    reference_record_count: 10247
     n_leads: 12
     lead_order: [I, II, III, aVR, aVL, aVF, V1, V2, V3, V4, V5, V6]
     sampling_frequency_hz: 500
@@ -65,45 +70,12 @@ condition_names_csv:
     here 'AF' is atrial FLUTTER and 'AFIB' is fibrillation, while the PhysioNet/CinC 2021
     tables use 'AF' for fibrillation and 'AFL' for flutter.
 
-vendored_subset:
-  path: corpus/
-  manifest: corpus/manifest.sha256
-  record_count: 1890
-  approx_size_mb: 220
-  selected_from: 10240 indexed records of the 10247-record upstream release
-  resolution_order: canonical_v2
-  rationale: >
-    The task runs with no network, so the corpus must travel with the repository; the full
-    2.5 GB release cannot. Records were selected test-split-first, giving every class 70
-    test and 35 validation records, capped by availability, with the remaining budget shared
-    across training. Split membership is unchanged: it is a hash of the record id, so no
-    record moves between train, validation and test as a result of subsetting.
-  per_class_test_records:
-    NSR: 70
-    AFIB: 70
-    SB: 70
-    ST: 70
-    SVT: 70
-    CD: 70
-    VE: 32
-  ve_ceiling_note: >
-    VE has 32 test records because the full corpus contains only 32 -- 242 VE records exist
-    and the id hash places 32 of them in test. This is a property of the upstream release,
-    not of subsetting, and no larger subset can raise it. Report the Wilson interval for VE
-    rather than the point estimate.
-  comparability_warning: >
-    The subset's test split is near-balanced (70 per class) where the full corpus is not
-    (532 SB against 32 VE). Overall accuracy and balanced accuracy therefore converge, and
-    metrics measured here are NOT comparable with figures computed on the full corpus. Any
-    pass threshold must be set from a run on this subset.
-
 integrity:
-  # The vendored subset carries its own SHA-256 manifest, generated when it was built and
-  # committed alongside it. Verify with:  sha256sum -c corpus/manifest.sha256
-  # Upstream, PhysioNet publishes SHA256SUMS.txt for the full release; no digest is
+  # The corpus is not committed, so there is no manifest in this repository to check.
+  # fetch_dataset.sh verifies every downloaded file against the SHA256SUMS.txt PhysioNet
+  # publishes for the release, and fails the image build on any mismatch. No digest is
   # hard-coded here because that would break whenever PhysioNet reissues the archive.
-  subset_manifest: corpus/manifest.sha256
-  upstream_checksum_manifest_url: https://physionet.org/files/ecg-arrhythmia/1.0.0/SHA256SUMS.txt
+  upstream_checksum_manifest_url: https://physionet.org/files/challenge-2021/1.0.3/SHA256SUMS.txt
   verify_command: "python -m ecgvit.cli verify-data"
 
 privacy:

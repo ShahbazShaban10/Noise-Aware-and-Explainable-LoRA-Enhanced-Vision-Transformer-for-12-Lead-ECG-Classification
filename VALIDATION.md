@@ -20,7 +20,7 @@ Terminal output of the two required local runs.
 | Docker | `docker --version` → *(fill in)* |
 | Harbor | `harbor --version` → *(fill in)* |
 | Python | *(fill in)* |
-| Corpus | records under `environment/data/corpus`, manifest verified: *(fill in)* |
+| Corpus | records under `/app/data/corpus` (downloaded at build, checksums verified): *(fill in)* |
 
 ## Check 1 — NOP
 

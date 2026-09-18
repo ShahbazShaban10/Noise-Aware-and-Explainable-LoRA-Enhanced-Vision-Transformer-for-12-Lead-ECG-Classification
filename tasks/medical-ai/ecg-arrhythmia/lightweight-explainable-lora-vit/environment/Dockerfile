@@ -59,6 +59,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3.10-dev \
         python3-pip \
         ca-certificates \
+        wget \
         libgomp1 \
     && rm -rf /var/lib/apt/lists/* \
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 \
@@ -125,10 +126,15 @@ else:
 TORCHCHECK
 
 # --- Task inputs ------------------------------------------------------------
-# environment/data/ carries the vendored corpus subset, the SNOMED vocabulary, the class
-# map and the split spec. The task runs with no network, so this is the only source of
-# data and nothing can drift under it.
+# environment/data/ carries the SNOMED vocabulary, the class map, the split spec and
+# fetch_dataset.sh. It does NOT carry the corpus -- that is downloaded just below.
 COPY data/ /app/data/
+
+# The corpus is downloaded HERE, at build time -- it is 1.2 GB of open-access signal data
+# and does not belong in the repository. network_mode = "no-network" governs the running
+# container, not the build, which already reaches the internet to install torch. The image
+# is therefore still fully self-contained at run time and nothing can drift under it.
+RUN bash /app/data/fetch_dataset.sh /app/data/corpus
 # instruction.md is deliberately NOT copied: it sits above the build context, and
 # Harbor hands the instruction to the agent as its prompt rather than as a file.
 # Nothing in solution/ or tests/ reads /app/instruction.md.

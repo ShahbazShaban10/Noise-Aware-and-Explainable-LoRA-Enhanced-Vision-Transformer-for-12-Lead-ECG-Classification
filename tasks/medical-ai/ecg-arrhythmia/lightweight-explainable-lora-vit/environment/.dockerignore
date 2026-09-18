@@ -33,5 +33,10 @@ cache
 Thumbs.db
 desktop.ini
 
-# data/README.md is deliberately NOT excluded: it is the provenance record for the vendored
-# corpus and travels with the data it describes.
+# A corpus fetched locally into data/corpus (git ignores it) must not ride along in the
+# build context: that is 1.2 GB copied on every build, and the Dockerfile downloads and
+# verifies its own copy anyway.
+data/corpus
+
+# data/README.md is deliberately NOT excluded: it is the provenance record for the corpus
+# the build downloads, and travels with the files that describe it.

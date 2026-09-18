@@ -42,8 +42,8 @@ Classification (Qayoom, Khan, Khanday, Joshi & Wani).\
 dataset_citation = """
 Zheng, J., Zhang, J., Danioko, S., Yao, H., Guo, H. & Rakovski, C. A 12-lead \
 electrocardiogram database for arrhythmia research covering more than 10,000 patients. \
-Sci. Data 7, 48 (2020). CC-BY-4.0. A checksum-pinned subset is vendored at \
-/app/data/corpus; see environment/data/README.md.\
+Sci. Data 7, 48 (2020). CC-BY-4.0. The full 10,247-record cohort is downloaded to \
+/app/data/corpus when the image is built; see environment/data/README.md.\
 """
 clinical_use = "false"
 disclaimer = """
@@ -72,11 +72,14 @@ PYTHONHASHSEED = "0"
 MPLBACKEND   = "Agg"
 
 [environment]
-# Everything the task needs is baked into the image: the corpus subset, the SNOMED
-# vocabulary, the class map and the split spec. Nothing is fetched at run time, so the
-# task cannot break when an external host changes.
+# Everything the task needs is baked into the image: the corpus (downloaded and
+# checksum-verified during the build), the SNOMED vocabulary, the class map and the split
+# spec. Nothing is fetched at run time, so the task cannot break when an external host
+# changes.
 network_mode      = "no-network"
-build_timeout_sec = 2400.0
+# Raised from 2400: the build now downloads the 1.2 GB corpus from PhysioNet in addition
+# to installing torch. 5400 leaves room for a slow link without inviting a stalled build.
+build_timeout_sec = 5400.0
 os                = "linux"
 workdir           = "/app"
 # `gpus` is deliberately NOT set. Harbor's Docker provider declares no GPU capability,
