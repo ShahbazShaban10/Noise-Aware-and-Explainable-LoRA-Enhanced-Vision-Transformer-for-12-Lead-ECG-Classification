@@ -46,7 +46,7 @@ as support shrinks, which is the point of reporting them per class.
 | CD | 0.6519 | 0.5207 | 0.5789 | 0.8863 | 169 | 0.446–0.595 |
 | VE ⚠️ | 0.3478 | 0.5000 | 0.4103 | 0.8949 | 32 | 0.336–0.664 |
 
-⚠️ **VE is flagged `evaluable: false`** — its test support is too small for the interval to be meaningful. It is reported, and it is included in the macro averages, but a per-class claim about it is not supported by this many records.
+⚠️ **VE is flagged `evaluable: false`** its test support is too small for the interval to be meaningful. It is reported, and it is included in the macro averages, but a per-class claim about it is not supported by this many records.
 
 ## Confusion matrix
 
@@ -76,7 +76,7 @@ LoRA rank 8, alpha 16, applied to `qkv`, `proj`, `fc1`, `fc2` across 32 layers.
 
 ## Reproducing this
 
-Needs Docker and a CUDA GPU. Everything else — corpus, class map, split spec — is
+Needs Docker and a CUDA GPU. Everything else corpus, class map, split spec is
 baked into the image, and the container runs with no network.
 
 ```bash
@@ -119,7 +119,7 @@ confirmation; the provenance table above records the result for this run.
 
 A reviewer needs an NVIDIA GPU whose architecture is covered by the cu128 wheel.
 Without one, `make test-cpu` still runs the unit tier anywhere, and `make solve-cpu`
-will train on CPU — in hours rather than minutes, which is a wiring check and not a
+will train on CPU in hours rather than minutes, which is a wiring check and not a
 result.
 
 ## Other artefacts
