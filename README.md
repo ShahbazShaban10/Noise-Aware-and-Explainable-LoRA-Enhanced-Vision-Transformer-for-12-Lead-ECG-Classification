@@ -87,7 +87,7 @@ you sort the toolkit out.
 
 ### The corpus
 
-The image downloads the full Chapman-Shaoxing cohort — 10,247 records, about 1.2 GB — while it
+The image downloads the full Chapman-Shaoxing cohort 10,247 records, about 1.2 GB while it
 is being built, and verifies every file against PhysioNet's published checksums before the
 build can finish. physionet.org rate-limits downloads, so this step takes about 2–3 hours; it
 fetches 16 files at a time, re-fetches anything missing or corrupt, and prints progress every
