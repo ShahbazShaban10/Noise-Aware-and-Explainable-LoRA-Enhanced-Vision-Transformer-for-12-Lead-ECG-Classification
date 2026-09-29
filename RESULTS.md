@@ -125,7 +125,7 @@ result.
 ## Other artefacts
 
 A completed run also writes explainability and statistical outputs that this file
-deliberately does not summarise — Grad-CAM arrays and figures, Integrated Gradients
+deliberately does not summarise Grad-CAM arrays and figures, Integrated Gradients
 and Gradient SHAP per-lead importance, an insertion/deletion faithfulness test,
 t-SNE embeddings, and McNemar and DeLong tests against a no-LoRA control. They are
 under `outputs/xai/`, `outputs/figures/xai/` and `outputs/stats/`.
