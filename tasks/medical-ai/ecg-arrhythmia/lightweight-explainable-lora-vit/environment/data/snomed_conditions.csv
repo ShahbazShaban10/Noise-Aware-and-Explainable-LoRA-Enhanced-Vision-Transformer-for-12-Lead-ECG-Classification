@@ -1,0 +1,134 @@
+snomed_ct,abbreviation,full_name,chapman_count,scored_2021
+164889003,AF,atrial fibrillation,1780,1
+164890007,AFL,atrial flutter,445,1
+6374002,BBB,bundle branch block,0,1
+426627000,Brady,bradycardia,0,1
+733534002,CLBBB,complete left bundle branch block,0,1
+713427006,CRBBB,complete right bundle branch block,0,1
+270492004,IAVB,1st degree av block,247,1
+713426002,IRBBB,incomplete right bundle branch block,0,1
+39732003,LAD,left axis deviation,382,1
+445118002,LAnFB,left anterior fascicular block,0,1
+164909002,LBBB,left bundle branch block,205,1
+251146004,LQRSV,low qrs voltages,249,1
+698252002,NSIVCB,nonspecific intraventricular conduction disorder,235,1
+426783006,NSR,sinus rhythm,1826,1
+284470004,PAC,premature atrial contraction,258,1
+10370003,PR,pacing rhythm,0,1
+365413008,PRWP,poor R wave progression,0,1
+427172004,PVC,premature ventricular contractions,0,1
+164947007,LPR,prolonged pr interval,12,1
+111975006,LQT,prolonged qt interval,57,1
+164917005,QAb,qwave abnormal,235,1
+47665007,RAD,right axis deviation,215,1
+59118001,RBBB,right bundle branch block,454,1
+427393009,SA,sinus arrhythmia,0,1
+426177001,SB,sinus bradycardia,3889,1
+427084000,STach,sinus tachycardia,1568,1
+63593006,SVPB,supraventricular premature beats,0,1
+164934002,TAb,t wave abnormal,1876,1
+59931005,TInv,t wave inversion,157,1
+17338001,VPB,ventricular premature beats,294,1
+233892002,AAR,accelerated atrial escape rhythm,0,0
+164951009,abQRS,abnormal QRS,0,0
+251187003,AED,atrial escape beat,0,0
+61277005,AIVR,accelerated idioventricular rhythm,0,0
+426664006,AJR,accelerated junctional rhythm,0,0
+251139008,ALR,suspect arm ecg leads reversed,0,0
+57054005,AMI,acute myocardial infarction,0,0
+413444003,AMIs,acute myocardial ischemia,0,0
+426434006,AnMIs,anterior ischemia,0,0
+54329005,AnMI,anterior myocardial infarction,0,0
+251173003,AB,atrial bigeminy,3,0
+195080001,AFAFL,atrial fibrillation and flutter,0,0
+195126007,AH,atrial hypertrophy,0,0
+251268003,AP,atrial pacing pattern,0,0
+106068003,ARH,atrial rhythm,0,0
+713422000,ATach,atrial tachycardia,121,0
+233917008,AVB,av block,166,0
+50799005,AVD,atrioventricular dissociation,0,0
+29320008,AVJR,atrioventricular junctional rhythm,0,0
+251166008,AVNRT,atrioventricular node reentrant tachycardia,16,0
+233897008,AVRT,atrioventricular reentrant tachycardia,8,0
+251170000,BPAC,blocked premature atrial contraction,0,0
+418818005,BRU,brugada,0,0
+74615001,BTS,brady tachy syndrome,0,0
+426749004,CAF,chronic atrial fibrillation,0,0
+251199005,CCR,countercolockwise rotation,162,0
+61721007,CVCL/CCVCL,clockwise or counterclockwise vectorcardiographic loop,0,0
+698247007,CDys,cardiac dysrhythmia,0,0
+27885002,CHB,complete heart block,1,0
+204384007,CIAHB,congenital incomplete atrioventricular heart block,0,0
+53741008,CHD,coronary heart disease,0,0
+413844008,CMI,chronic myocardial ischemia,0,0
+251198002,CR,clockwise rotation,76,0
+82226007,DIB,diffuse intraventricular block,0,0
+428417006,ERe,early repolarization,22,0
+13640000,FB,fusion beats,2,0
+164942001,FQRS,fqrs wave,3,0
+84114007,HF,heart failure,0,0
+368009,HVD,heart valve disorder,0,0
+251259000,HTV,high t-voltage,0,0
+251200008,ICA,indeterminate cardiac axis,0,0
+195042002,IIAVB,2nd degree av block,8,0
+426183003,IIAVBII,mobitz type II atrioventricular block,0,0
+425419005,IIs,inferior ischaemia,0,0
+251120003,ILBBB,incomplete left bundle branch block,0,0
+704997005,ISTD,inferior ST segment depression,0,0
+49260003,IR,idioventricular rhythm,0,0
+426995002,JE,junctional escape,15,0
+251164006,JPC,junctional premature complex,1,0
+426648003,JTach,junctional tachycardia,0,0
+253352002,LAA,left atrial abnormality,0,0
+67741000119109,LAE,left atrial enlargement,0,0
+446813000,LAH,left atrial hypertrophy,0,0
+425623009,LIs,lateral ischaemia,0,0
+445211001,LPFB,left posterior fascicular block,0,0
+164873001,LVH,left ventricular hypertrophy,15,0
+55827005,LVHV,left ventricular high voltage,1295,0
+370365005,LVS,left ventricular strain,0,0
+164865005,MI,myocardial infarction,40,0
+164861001,MIs,myocardial ischemia,0,0
+54016002,MoI,mobitz type i wenckebach atrioventricular block,6,0
+428750005,NSSTTA,nonspecific st t abnormality,1158,0
+164867002,OldMI,old myocardial infarction,0,0
+282825002,PAF,paroxysmal atrial fibrillation,0,0
+251205003,PPW,prolonged P wave,0,0
+67198005,PSVT,paroxysmal supraventricular tachycardia,0,0
+425856008,PVT,paroxysmal ventricular tachycardia,0,0
+164912004,PWC,p wave change,95,0
+253339007,RAAb,right atrial abnormality,0,0
+164921003,RAb,r wave abnormal,0,0
+446358003,RAH,right atrial hypertrophy,3,0
+67751000119106,RAHV,right atrial high voltage,8,0
+314208002,RAF,rapid atrial fibrillation,0,0
+89792004,RVH,right ventricular hypertrophy,4,0
+17366009,SAAWR,sinus atrium to atrial wandering rhythm,7,0
+65778007,SAB,sinoatrial block,0,0
+5609005,SARR,sinus arrest,0,0
+60423000,SND,sinus node dysfunction,0,0
+49578007,SPRI,shortened pr interval,0,0
+77867006,SQT,decreased qt interval,0,0
+55930002,STC,s t changes,0,0
+429622005,STD,st depression,402,0
+164931005,STE,st elevation,176,0
+164930006,STIAb,st interval abnormal,2,0
+251168009,SVB,supraventricular bigeminy,0,0
+426761007,SVT,supraventricular tachycardia,587,0
+266257000,TIA,transient ischemic attack,0,0
+251223006,TPW,tall p wave,0,0
+164937009,UAb,u wave abnormal,22,0
+11157007,VBig,ventricular bigeminy,3,0
+164884008,VEB,ventricular ectopics,0,0
+75532003,VEsB,ventricular escape beat,7,0
+81898007,VEsR,ventricular escape rhythm,0,0
+164896001,VF,ventricular fibrillation,0,0
+111288001,VFL,ventricular flutter,0,0
+266249003,VH,ventricular hypertrophy,0,0
+195060002,VPEx,ventricular pre excitation,12,0
+251266004,VPP,ventricular pacing pattern,0,0
+251182009,VPVC,paired ventricular premature complexes,0,0
+164895002,VTach,ventricular tachycardia,0,0
+251180001,VTrig,ventricular trigeminy,8,0
+195101003,WAP,wandering atrial pacemaker,2,0
+74390002,WPW,wolff parkinson white pattern,4,0

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecgvit"
+version = "1.0.0"
+description = "Noise-aware, explainable LoRA-enhanced Vision Transformer for 12-lead ECG arrhythmia classification"
+requires-python = ">=3.10,<3.14"   # wheels verified for 3.11-3.13; CI and the Dockerfile use 3.11
+license = { text = "MIT" }
+authors = [{ name = "Shahbaz Ahmad Khanday" }]
+keywords = ["ecg", "arrhythmia", "vision-transformer", "lora", "explainable-ai", "snomed-ct"]
+
+# torch is intentionally NOT listed here. It must come from the CUDA-matched index
+# (see environment/requirements-cu128.txt); a bare `pip install torch` pulls a build with
+# no kernels for Blackwell (sm_120) and every CUDA call then fails at runtime.
+dependencies = [
+  "numpy>=2.1,<3",
+  "scipy>=1.14,<2",
+  "pandas>=2.2,<3",
+  "scikit-learn>=1.5,<2",
+  "wfdb>=4.1,<5",
+  "matplotlib>=3.9,<4",
+  "seaborn>=0.13,<0.14",
+  "captum>=0.9,<1",   # 0.8.0 declares numpy<2.0 and cannot resolve against numpy>=2
+  "PyYAML>=6.0,<7",
+  "tqdm>=4.66,<5",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.3,<10", "pytest-timeout>=2.3"]
+shap = ["shap>=0.46,<1"]
+
+[project.scripts]
+ecgvit = "ecgvit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

@@ -1,0 +1,60 @@
+schema_version: "1.0.0"
+
+# The split is DERIVED, not stored. Given CHAPMAN_ROOT and this spec, the assignment of
+# every record to train/val/test is a pure function of the record id — so two machines
+# produce byte-identical splits without shipping a 10k-line record list, and adding
+# records to the corpus never reshuffles the ones already assigned.
+
+method: hash_stratified
+hash:
+  # bucket = int(sha256(f"{salt}:{record_id}").hexdigest()[:16], 16) / 2**64  ->  [0, 1)
+  algorithm: sha256
+  salt: "ecgvit-chapman-v1"
+  digest_hex_chars: 16
+
+proportions:
+  train: 0.70
+  val: 0.15
+  test: 0.15
+
+stratify_by: class_label
+# Buckets are computed within each class, so every split holds the same class proportions
+# as the corpus regardless of how skewed the corpus is.
+
+grouping:
+  by: record_id
+  note: >
+    Chapman-Shaoxing is one 10-second record per patient, so record-level splitting is
+    already patient-level splitting; there is no leakage path through repeated patients.
+    If you extend this to a corpus with multiple records per patient (PTB-XL has some),
+    change `by` to patient_id and the loader will group on that instead.
+
+seed: 42
+# `seed` only controls stochastic training components (weight init, MixUp, shuffling).
+# The split itself is seed-independent by construction — it depends on `hash.salt` alone.
+
+augmentation:
+  # Balancing is applied to the TRAINING SPLIT ONLY, after the split is fixed.
+  # Validation and test are never augmented and never resampled.
+  apply_to: [train]
+  strategy: capped_oversample_with_jitter
+  target: median_class_count
+  max_duplication_factor: 8
+  # A class is oversampled to the median class count, but never by more than 8x its own
+  # unique-sample count. Refuse-loudly rather than manufacture a class out of nothing:
+  min_unique_samples_per_class: 50
+  on_below_minimum: error
+  transforms:
+    - {name: gaussian_noise, sigma_frac: 0.01}
+    - {name: amplitude_scale, range: [0.9, 1.1]}
+    - {name: circular_time_shift, max_frac: 0.05}
+  note: >
+    Read docs/CLASS_MAPPING.md before relaxing min_unique_samples_per_class. Oversampling a
+    class with a handful of unique records up to parity does not create information; it
+    creates a test-set-independent illusion of balanced accuracy, because the duplicated
+    records dominate the class prototype. The reported metrics carry
+    `unique_support` alongside `support` so this is always visible.
+
+reporting:
+  emit: metrics.json
+  require_fields: [support, unique_support, duplication_factor]

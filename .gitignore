@@ -1,0 +1,87 @@
+# ---------------------------------------------------------------------------
+# Patient data must never enter this repository.
+# The ECG corpus is open access and fetched by link; see
+# tasks/**/environment/data/README.md.
+# ---------------------------------------------------------------------------
+*.mat
+*.hea
+*.dat
+*.edf
+*.xyz
+WFDB*/
+
+# NO EXCEPTIONS. An earlier revision un-ignored environment/data/corpus/ so the corpus
+# could travel with the repository and satisfy network_mode = "no-network". That put
+# 13,746 signal files and 1,173 MB into git, against this repository's own documented
+# rule (environment/data/README.md: "do not commit it"), and the submission was rejected
+# for exceeding a 500 MB limit. The corpus is now fetched at IMAGE BUILD time by
+# environment/data/fetch_dataset.sh; the container still runs with no network.
+**/environment/data/corpus/
+
+# Generated test fixtures (the generator and its manifest ARE committed)
+tests/fixtures/corpus/
+**/tests/fixtures/corpus/
+
+# Run artefacts
+# `harbor run` writes a jobs/ tree beside the working directory: per-trial logs plus the
+# collected artefacts, i.e. checkpoints and figures. The transcripts that matter are
+# quoted in VALIDATION.md; the raw trees are run output, not deliverables.
+jobs/
+logs/
+outputs/
+**/outputs/
+# ...and any hand-made copy of one. A backup named outputs_calibration_backup does
+# not match `outputs/`, which is how a whole run -- predictions.csv, a 6,874-row
+# record index, the lot -- once got committed by a plain `git add -A`.
+outputs_*/
+**/outputs_*/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npz
+cache/
+**/cache/
+mlruns/
+wandb/
+
+# Figures produced by a run (the code that makes them is committed)
+**/figures/*.png
+**/figures/**/*.png
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+# Notebooks are committed WITHOUT outputs (see notebooks/README.md); these are run copies.
+*.nbconvert.ipynb
+**/notebooks/*.out.ipynb
+.tox/
+
+# Editors / OS
+# The shared VS Code config IS committed (test discovery, run configurations, recommended
+# extensions); anything else under .vscode/ is per-machine and is not.
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,24 @@
+# PyTorch, pinned to the CPU-only build index.
+#
+# This file is NOT the graded path. The task's contract is a CUDA 12.8 image (see
+# requirements-cu128.txt) and the reference schedule is calibrated for a GPU; on CPU the
+# same run takes hours rather than minutes and is useful only for wiring checks, the unit
+# tier, and reading the code on a machine with no NVIDIA hardware.
+#
+# It is selected through the Dockerfile's TORCH_REQUIREMENTS build argument, which
+# defaults to requirements-cu128.txt. Harbor passes no build arguments, so Harbor never
+# builds this variant:
+#
+#   docker build -t ecgvit:1.0.0-cpu \
+#     --build-arg BASE_IMAGE=ubuntu:22.04 \
+#     --build-arg ACCELERATOR=cpu \
+#     --build-arg TORCH_REQUIREMENTS=requirements-cpu.txt \
+#     environment/
+#
+# The version is the same 2.8.0 as the CUDA build, so only the kernels differ. Keep the two
+# files at the same pin: a CPU image on a different torch would stop being a check of the
+# same code.
+
+--index-url https://download.pytorch.org/whl/cpu
+
+torch==2.8.0

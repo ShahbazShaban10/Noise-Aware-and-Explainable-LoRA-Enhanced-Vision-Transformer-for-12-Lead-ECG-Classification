@@ -1,0 +1,85 @@
+schema_version: "1.0.0"
+
+primary:
+  name: chapman-shaoxing
+  title: PhysioNet/CinC Challenge 2021 training data -- chapman_shaoxing cohort
+  version: "1.0.3"
+  landing_page: https://physionet.org/content/challenge-2021/1.0.3/
+  wget_mirror: https://physionet.org/files/challenge-2021/1.0.3/training/chapman_shaoxing/
+  checksums_url: https://physionet.org/files/challenge-2021/1.0.3/SHA256SUMS.txt
+  fetch_with: fetch_dataset.sh
+  # NOT physionet.org/content/ecg-arrhythmia/1.0.0/, which earlier revisions of this file
+  # named. That release is 45,152 records because it merges Chapman-Shaoxing WITH Ningbo,
+  # and every record there is JS-prefixed too, so "JS-prefixed" does not isolate the
+  # cohort. This task's 10,247 records are the Challenge 2021 chapman_shaoxing folder;
+  # using the other release would silently train on a 4.4x larger population.
+  licence: CC-BY-4.0
+  licence_url: https://physionet.org/content/ecg-arrhythmia/view-license/1.0.0/
+  citation: >
+    Zheng, J., Guo, H. & Chu, H. A large scale 12-lead electrocardiogram database for
+    arrhythmia study (version 1.0.0). PhysioNet (2022). RRID:SCR_007345.
+  paper: >
+    Zheng, J. et al. A 12-lead electrocardiogram database for arrhythmia research covering
+    more than 10,000 patients. Scientific Data 7, 48 (2020).
+  cohort_used: Chapman-Shaoxing, all 10,247 records of the cohort
+  expected:
+    # min_records is the hard gate: it catches a mis-set corpus path or a partial
+    # download, so it sits just under the full cohort rather than far below it. The
+    # corpus is fetched at image build time and is never committed -- see fetch_dataset.sh
+    # and environment/data/README.md.
+    min_records: 10200
+    reference_record_count: 10247
+    n_leads: 12
+    lead_order: [I, II, III, aVR, aVL, aVF, V1, V2, V3, V4, V5, V6]
+    sampling_frequency_hz: 500
+    samples_per_record: 5000
+    duration_s: 10
+    adc_gain_per_mv: 1000
+    adc_resolution_bits: 16
+    label_field: "#Dx:"
+    label_vocabulary: snomed_ct
+
+secondary:
+  # Optional. Only needed to reproduce the manuscript's cross-dataset generalisation
+  # experiment (Table 3). The task's tests do not require it.
+  name: ptb-xl
+  title: PTB-XL, a large publicly available electrocardiography dataset
+  version: "1.0.3"
+  landing_page: https://physionet.org/content/ptb-xl/1.0.3/
+  licence: CC-BY-4.0
+  citation: >
+    Wagner, P. et al. PTB-XL, a large publicly available electrocardiography dataset.
+    Scientific Data 7, 154 (2020).
+  note: >
+    PTB-XL is sampled at 500 Hz (records_500) and 100 Hz (records_100). Use records_500 so
+    that no resampling is required. Labels are SCP-ECG statements, not SNOMED CT; the
+    mapping to the seven classes lives in ecgvit/labels.py::SCP_TO_CLASS and is applied only
+    when --eval-ptbxl is passed.
+
+condition_names_csv:
+  file: ConditionNames_SNOMED-CT.csv
+  description: >
+    Acronym -> SNOMED CT table distributed by the dataset developers with Chapman-Shaoxing
+    (63 conditions). Vendored here because it is 2.5 KB, CC BY 4.0 like the rest of the
+    release, and is the authoritative mapping for the published canonical_hmgmedformer
+    grouping. It contains no patient data.
+  licence: CC-BY-4.0
+  authority: >
+    Where this file and snomed_conditions.csv both describe a code, this file's abbreviation
+    wins; the two are merged so codes it does not cover still resolve. NOTE the collision:
+    here 'AF' is atrial FLUTTER and 'AFIB' is fibrillation, while the PhysioNet/CinC 2021
+    tables use 'AF' for fibrillation and 'AFL' for flutter.
+
+integrity:
+  # The corpus is not committed, so there is no manifest in this repository to check.
+  # fetch_dataset.sh verifies every downloaded file against the SHA256SUMS.txt PhysioNet
+  # publishes for the release, and fails the image build on any mismatch. No digest is
+  # hard-coded here because that would break whenever PhysioNet reissues the archive.
+  upstream_checksum_manifest_url: https://physionet.org/files/challenge-2021/1.0.3/SHA256SUMS.txt
+  verify_command: "python -m ecgvit.cli verify-data"
+
+privacy:
+  contains_phi: false
+  note: >
+    Records are de-identified by the data providers. Age and sex remain in the headers and
+    are read only for the cohort report; they are never used as model inputs.

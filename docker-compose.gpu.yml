@@ -1,0 +1,39 @@
+# GPU passthrough overlay for the repository's docker-compose.yml.
+#
+# Selected by default: `.env` sets COMPOSE_FILE to both files, so plain `docker compose ...`
+# from the repository root already attaches a device.
+#
+# It is a separate file rather than a block on the shared anchor because a device
+# reservation is a hard requirement at container-create time, not a preference. With the
+# reservation on the anchor, `docker compose run --rm test` on a laptop with no NVIDIA
+# Container Toolkit died with
+#
+#   could not select device driver "nvidia" with capabilities: [[gpu]]
+#
+# before running a single test that never needed a GPU in the first place. Splitting it out
+# means the base file runs anywhere and this file is opt-out in one place.
+#
+# `test` is deliberately absent: the unit tier is pure CPU work, so it stays runnable even
+# while this overlay is active.
+#
+# The reservation is the compose spelling of `docker run --gpus 1`; see
+# tasks/**/environment/docker-compose.yaml for why Harbor needs it expressed this way and
+# cannot use task.toml's `[environment] gpus`.
+
+services:
+  solve:
+    deploy: &gpu
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # The artefact tier reloads the checkpoint and re-runs inference over the test split, so
+  # grading wants the device too -- it just does not fail without it.
+  verify:
+    deploy: *gpu
+
+  shell:
+    deploy: *gpu
